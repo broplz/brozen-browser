@@ -26,3 +26,10 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 ## For the owner
 - commit ADR-0001 to docs/adr/0001-little-bb-floating-window.md (status Proposed → Accepted?)
 - Apple Developer account status (E0 signing; approval can take up to two weeks)
+
+## Found 2026-10-29 (env, first build on M3 Max)
+- init: after `npm run init` run `python3 scripts/update_en_US_packs.py` (else empty UI strings + no shortcuts); add to runbook/driver init step
+- branding: build runs as unofficial → "Nightly"; need BB brand config (surfer brand)
+- env pins: Node must be 22 (`.nvmrc`); Node 25 breaks surfer import (async-icns rmdir recursive). gnu-tar required on macOS
+- triage_log.py: false "error" on `Notification center failed: Install terminal-notifier`
+- Browser Console: `Key element … missing "key"/"keycode"` warnings for Zen shortcuts (ShortcutUtils) — check if upstream Zen or l10n
