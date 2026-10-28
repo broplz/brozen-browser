@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: qa
+status: ready
 base: feat/layer
 branch: task/0002-bb-lib-step
 depends_on: []
@@ -18,7 +18,7 @@ allowed_paths:
   - scripts/bb/lib.sh
   - scripts/bb/tests/lib_test.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4--runbook-ребейза
-returns: 1
+returns: 0
 sessions: 1
 reviewed_sha: 907b30338aee752661cb591c15196bfea0120d57
 qa_sha: 907b30338aee752661cb591c15196bfea0120d57
@@ -70,6 +70,12 @@ and report.sh can later read step timings from the log.
 - Unblock 2026-10-28: escalated, not split or re-spec'd. The code is approved and the only
   blockers are outside an agent's reach: the reviewer-committed `.claude/agent-memory/` files
   in the diff, and the denied Bash commands for DoD 1–2. See docs/reports/decisions-needed.md.
+- Re-spec 2026-10-28: the owner resolved both blockers in f43e42814 (`bash -n` and `/bin/bash`
+  scripts are allowed; DoD scope is checked with diff.sh, which ignores `.claude/agent-memory/`).
+  The code is approved, so do not change lib.sh or lib_test.sh. Next session: run DoD 1, 2, 5 and 6
+  exactly as written, record the outputs in ## Result, then set status `review`. The reviewer's two
+  non-blocking items (`"$BASH" -c`, escaped prefix) are optional. They fit inside allowed_paths.
+  QA item 1 used `git diff --name-only`, so it does not apply. DoD 6 (diff.sh) is the check.
 
 ## Handoff
 Done: lib.sh and lib_test.sh are complete and unchanged (review APPROVE; QA items 4–6 pass).
