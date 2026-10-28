@@ -1,0 +1,3 @@
+# Human approvals — one line per task: "<id> approved [note]". Only the owner edits this file.
+# The driver merges a task with needs_approval: true (or C++/ObjC/IDL / Zen-patch changes) only
+# when its id is listed here. Check the branch first: scripts/agents/diff.sh tasks/<id>-*.md
