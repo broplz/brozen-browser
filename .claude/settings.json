@@ -55,7 +55,13 @@
       "Bash(npm --version)",
       "Bash(python3 --version)",
       "Bash(rustc --version)",
-      "Bash(cargo --version)"
+      "Bash(cargo --version)",
+      "Bash(bash -n *)",
+      "Bash(sh -n *)",
+      "Bash(zsh -n *)",
+      "Bash(/bin/bash scripts/bb/*)",
+      "Bash(/bin/bash scripts/agents/*)",
+      "Bash(python3 -m py_compile *)"
     ],
     "deny": [
       "Bash(git push*)",
