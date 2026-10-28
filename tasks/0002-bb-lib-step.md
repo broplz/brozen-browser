@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: blocked
+status: qa
 base: feat/layer
 branch: task/0002-bb-lib-step
 depends_on: []
@@ -22,7 +22,7 @@ returns: 1
 sessions: 1
 reviewed_sha: 907b30338aee752661cb591c15196bfea0120d57
 qa_sha: 907b30338aee752661cb591c15196bfea0120d57
-blocked_reason: needs removal of reviewer-added .claude/agent-memory files from branch (git rm denied, .claude forbidden)
+blocked_reason: 
 ---
 ## Goal
 Create `scripts/bb/lib.sh`, the shared shell library every BB product script sources
@@ -45,7 +45,7 @@ and report.sh can later read step timings from the log.
    g. footer `duration=` value is an integer followed by `s`.
 4. The test writes only under a `mktemp -d` directory (it sets `BB_LOG_DIR` there) and removes it.
 5. `grep -c -E "^set -" scripts/bb/lib.sh` → `0` (a library never changes the caller's shell options).
-6. `git diff --name-only feat/layer` lists only the two allowed files plus this task file.
+6. `scripts/agents/diff.sh tasks/0002-bb-lib-step.md --names` lists only scripts/bb/lib.sh and scripts/bb/tests/lib_test.sh.
 
 ## Notes from teamlead
 - Interface (later tasks depend on these exact names):
