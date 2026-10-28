@@ -19,7 +19,7 @@ allowed_paths:
   - scripts/bb/tests/lib_test.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4--runbook-ребейза
 returns: 0
-sessions: 1
+sessions: 0
 reviewed_sha: 907b30338aee752661cb591c15196bfea0120d57
 qa_sha: 907b30338aee752661cb591c15196bfea0120d57
 blocked_reason: 
