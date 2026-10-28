@@ -1,1 +1,2 @@
 - [Re-run DoD greps](feedback_rerun_dod.md) — developers skip cheap DoD checks; run them yourself in turn 1
+- [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths
