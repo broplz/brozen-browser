@@ -20,6 +20,7 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - 0010 layer: `scripts/bb/l10n.sh` (bare mirror cache + sparse checkout en-US, ru) — ADR-0002 §Решение 4 "Кэш" · S · build none · depends 0002
 - 0011 layer: rebase.sh steps 10-11 (smoke hand-off, package, main := rebase/<tag>, tag bb/base/<tag>, force-with-lease push, report) — ADR-0002 §Решение 4 · M · build none · depends 0014, 0008, 0009 · needs_approval
 - 0012 layer: dry-run `rebase.sh 1.23.4b` from a `main'` built on 1.23.3b with the same layer; timings into docs/rebase/1.23.4b.md — ADR-0002 план проверки п.4 (R5, R6, R8) · L · role rebaser · needs_approval · depends 0006, 0011
+  - not planned by teamlead (2026-10-29): dry-run mechanics not in the ADR; see docs/reports/decisions-needed.md
 
 ## Found by agents
 (one line each: what, where, why it matters — the teamlead promotes these into tasks)

@@ -50,6 +50,16 @@ Lessons:
   (BB patch on a Firefox file) is developer-hard, even if the content is a comment.
 - New scripts may land without the exec bit; write DoDs as `bash scripts/...` unless mode is verified.
 
+Outcome: 0014 done after 1 return (nvm outside step → no footer; rm -rf unchecked). 0007/0008/0009 done.
+
+Planned 2026-10-29 (3rd run) on feat/layer:
+- 0010 l10n.sh + fixture test (local "upstream" with allowAnySHA1InWant), S, build none
+- 0011 rebase.sh steps 10-11 (smoke/package/install/finalize/publish + failure report), M, 5 files, needs_approval
+  (moves+pushes main). Narrowed ADR `--tags` to the two refs. Watch: M with 5 steps + 6 test cases may return.
+- 0012 dry-run NOT planned: escalated (main' location, bb/base tag collision, /Applications, who does git work).
+- Hook: commands naming scripts/bb/rebase.sh run only for role rebaser; smoke.sh only rebaser/qa (teamlead too
+  can't grep them — use Read). So no `bash -n rebase.sh` in a developer DoD; tests that source it are fine.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
