@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: M
-status: ready
+status: approved
 base: feat/layer
 branch: task/0007-bb-rebase-sh-steps-1-4
 depends_on: [0002, 0005]
@@ -18,10 +18,10 @@ allowed_paths:
   - scripts/bb/rebase.sh
   - scripts/bb/tests/rebase_test.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4--runbook-ребейза
-returns: 0
+returns: 1
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 1239fed57f5b1c2eeec0ccd7abbfdb98359719cd
+qa_sha: 1239fed57f5b1c2eeec0ccd7abbfdb98359719cd
 blocked_reason:
 ---
 ## Goal
@@ -96,7 +96,81 @@ Backlog item 0007 was split by the teamlead: steps 1-9 in one script plus a git-
 ## Handoff
 
 ## Result
+Round 2 (review items 1-5): `--continue` now checks `rebase_in_progress` before the branch check (1); test
+case c also asserts `in progress` in stderr (2); removed the unspecified `merge-base --is-ancestor` check (3);
+conflict files are read once into `files` (4); fixed the `preflight_fails` comment (5).
+Verified: `/bin/bash scripts/bb/tests/rebase_test.sh` → `PASS`.
+
+Round 1: added `scripts/bb/rebase.sh` (steps 1-4 + `--continue`, `post_rebase` stub for 0014) and
+`scripts/bb/tests/rebase_test.sh` (git fixture under `mktemp -d`, cases a-g).
+Verified: `/bin/bash scripts/bb/tests/rebase_test.sh` → `PASS`. The test runs the script, so it parses.
+Not run directly: `bash -n scripts/bb/rebase.sh`, the DoD-5 grep and `diff.sh --names` — the agent hook
+blocks any command naming rebase.sh. DoD 5 checked by eye: no `npm run`, `reset-ff`, `push` in the file.
+Notes: `step` runs functions where errexit is off, so step functions use explicit `return 1`; the stderr reason
+is the last `rebase: ` line of the log. Extra checks beyond the spec: tag `bb/base/X` must exist; `--continue`
+requires `Y` to be an ancestor of HEAD.
 
 ## Review
+APPROVE
+Round 2: all five round-1 items are fixed.
+1. Fixed: `rebase_in_progress` now runs before the branch check (rebase.sh:177-178).
+2. Fixed: case c also asserts `in progress` in stderr (rebase_test.sh:99).
+3. Fixed: the `merge-base --is-ancestor` check is removed. `--continue` now checks exactly what the Notes list.
+4. Fixed: the conflict files are read once into `files` (rebase.sh:142).
+5. Fixed: the `preflight_fails` comment now matches its single argument.
+
+Checklist notes:
+- Spec: steps 1-4, the recon log formats, exit codes 0/1/2/3, the `post_rebase` stub, the env overrides
+  and the reuse of the `--continue` log all match the DoD and the Notes.
+- Scope: only the two allowed_paths changed.
+- Layer: `layer_lint` reported 0 fail and 0 warn. No Zen or engine files changed.
+- Correctness: the script uses `set -euo pipefail` and captures exit codes with `|| rc=$?`. Every git call
+  runs through `-C "$BB_REPO_DIR"`. The script never moves `main` and never pushes or deletes anything.
+- Verification: I ran `/bin/bash scripts/bb/tests/rebase_test.sh` myself and it printed `PASS`. The hook
+  still blocks `bash -n` and the DoD-5 grep for the reviewer role. I read the whole diff and found no
+  `npm run`, `reset-ff` or `push`.
+- Hygiene: no secrets, no TODOs, everything is in English.
+
+---
+Round 1:
+REQUEST_CHANGES
+1. scripts/bb/rebase.sh:176-177: the `--continue` checks run in the wrong order. While a `git rebase` is
+   stopped on a conflict, HEAD is detached, so `symbolic-ref` returns empty and the branch check at :176 always
+   fires first. The user sees "needs branch rebase/Y, current is ''" instead of "a git rebase is still in
+   progress", and `rebase_in_progress` (:177) can never be reached in the DoD 3c scenario. Fix: check
+   `rebase_in_progress` before the branch check.
+2. scripts/bb/tests/rebase_test.sh:98: case (c) only asserts `RC=1`, so it passes for the wrong reason (see
+   item 1). Also assert that `$ERR` contains `in progress`.
+3. scripts/bb/rebase.sh:178: the `merge-base --is-ancestor` check is not in the spec. The Notes list the
+   `--continue` conditions exactly: branch `rebase/Y` and no rebase in progress. No test covers this check.
+   Remove it, or add a test case and record the reason in ## Result. The `bb/base/X` check at :136 is fine
+   to keep because it runs before `switch`, so it leaves no orphaned branch.
+4. scripts/bb/rebase.sh:140,143: `g diff --name-only --diff-filter=U` runs twice. Run it once into a local
+   (`files="$(…)"`), test it for emptiness, then loop over it.
+5. scripts/bb/tests/rebase_test.sh:109: the comment documents `<target tag>`, but `preflight_fails` only
+   uses `$1`. Fix the comment.
+
+Checklist notes:
+- Spec: steps 1-4, log format, exit codes, `post_rebase` stub, env overrides and the awk parsing of
+  layer.yaml match the Notes, except items 1 and 3.
+- Scope: only the two allowed_paths changed (`diff.sh --names`).
+- Layer: no Zen or engine files changed. `layer_lint` reported 0 fail and 0 warn.
+- Correctness: the script uses `set -euo pipefail` and captures exit codes with `|| rc=$?`. Step
+  functions explicitly `return 1` because errexit is off inside lib.sh's `step` list. Git always runs
+  through `-C "$BB_REPO_DIR"`. The script never touches `main` and deletes or pushes nothing.
+- Verification: I ran `/bin/bash scripts/bb/tests/rebase_test.sh`, which printed `PASS`. I could not run
+  `bash -n` or the DoD-5 grep because the hook blocks any command that names the script for the reviewer
+  role too. I read all 190 lines of the diff and found no `npm run`, `reset-ff` or `push`.
+- Hygiene: no secrets, no TODOs, everything is in English.
 
 ## QA
+PASS
+1. DoD 1 (`bash -n`): the hook blocks the command for role qa. The script parses, because the DoD 2 test runs it end to end, and I read all 190 lines with no syntax issue.
+2. DoD 2: `/bin/bash scripts/bb/tests/rebase_test.sh` → `PASS`.
+3. DoD 3 (cases a-g): covered by the test, which passed. I read the code paths for exit codes 0/1/2/3, the recon line formats and the `--continue` log reuse, and they match the spec.
+4. DoD 4: the test writes only under its `mktemp -d` (`LOGS="$d/logs"`). It does not reference the real `logs/`.
+5. DoD 5: the grep is blocked by the hook for role qa. I read the full script instead, and `npm run`, `reset-ff` and `push` do not appear in it (expected count 0).
+6. DoD 6: `diff.sh --names` lists only `scripts/bb/rebase.sh` and `scripts/bb/tests/rebase_test.sh`.
+7. `scripts/agents/test.sh lint` → OK (0 problems). `layer_lint` → 0 fail, 0 warn. Build type `none`, so no build was run.
+
+For the human: nothing marked `[human]`. Re-run `bash -n scripts/bb/rebase.sh` and the DoD 5 grep by hand, since the hook blocks them for agents.
