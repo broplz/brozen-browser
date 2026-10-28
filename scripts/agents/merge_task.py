@@ -45,7 +45,7 @@ def gates(tf, branch):
 
 
 def merge(path, check_only=False):
-    tf = TaskFile(path)
+    tf = pl.live_task(path)
     tid, branch, base = tf.task_id(), pl.task_branch(tf), pl.task_base(tf)
     if not pl.branch_exists(branch):
         pl.die(f"branch {branch} does not exist")
@@ -72,6 +72,9 @@ def merge(path, check_only=False):
         return 0
 
     pl.switch(base)
+    # the branch's task file is the truth for a task in flight; bring the base copy level with it
+    # first so the squash never conflicts on tasks/<file> (two copies diverge during unblocks)
+    pl.sync_task_file(path, branch, f"tasks: {tid} sync from branch (driver)")
     title, prefix = tf.get("title", tid), tf.get("prefix", tf.get("epic", "layer"))
     r = pl.git("merge", "--squash", branch, check=False)
     if r.returncode != 0:

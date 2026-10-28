@@ -28,17 +28,7 @@ RUNNABLE = ("ready", "in_progress", "returned", "review", "qa", "approved")
 
 
 def live_task(path):
-    """Task file as it is on its branch (if the branch exists), else the working-tree copy.
-    A final status on the base copy (done/split) wins — the branch copy is history then."""
-    tf = TaskFile(path)
-    if tf.get("status") in config.FINAL_STATUSES:
-        return tf
-    branch = pl.task_branch(tf)
-    if pl.branch_exists(branch) and pl.current_branch() != branch:
-        r = pl.git("show", f"{branch}:{pl.rel(path)}", check=False)
-        if r.returncode == 0:
-            return TaskFile.from_text(r.stdout, path)
-    return tf
+    return pl.live_task(path)
 
 
 def scan():
