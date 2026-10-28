@@ -103,8 +103,7 @@ def run_unblock(tf):
     branch, base = pl.task_branch(tf), pl.task_base(tf)
     pl.switch(base)
     if pl.branch_exists(branch):
-        pl.git("checkout", branch, "--", pl.rel(tf.path))
-        commit_task(tf.path, f"tasks: {tf.task_id()} sync from branch (driver)")
+        pl.sync_task_file(tf.path, branch, f"tasks: {tf.task_id()} sync from branch (driver)")
     run_agent("teamlead", tf.path, mode="unblock")
     pl.autocommit(f"tasks: {tf.task_id()} unblock (driver auto-commit)")
     tf = TaskFile(tf.path)
@@ -113,8 +112,7 @@ def run_unblock(tf):
         commit_task(tf.path, f"tasks: {tf.task_id()} re-spec counters (driver)")
         if pl.branch_exists(branch):
             pl.switch(branch)
-            pl.git("checkout", base, "--", pl.rel(tf.path))
-            commit_task(tf.path, f"tasks: {tf.task_id()} re-spec (driver)")
+            pl.sync_task_file(tf.path, base, f"tasks: {tf.task_id()} re-spec (driver)")
     return TaskFile(tf.path)
 
 
@@ -123,7 +121,7 @@ def run_task(path, once=False):
     steps, unblock_tried = 0, False
     while steps < config.MAX_LOOP_STEPS:
         steps += 1
-        tf = TaskFile(path)
+        tf = pl.live_task(path)          # branch copy while in flight, base copy once done/split
         status = tf.get("status", "draft")
         pl.log(f"task {tid}: status={status} returns={tf.get('returns', 0)} sessions={tf.get('sessions', 0)}")
 

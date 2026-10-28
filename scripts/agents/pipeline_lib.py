@@ -172,6 +172,44 @@ def backlog_order():
     return ids
 
 
+def live_task(path: str) -> TaskFile:
+    """The copy of a task file that is authoritative right now: the base copy when it says
+    done/split, otherwise the task branch's copy (when the branch exists), otherwise the
+    working-tree copy. Two copies exist while a task is in flight (base and branch); reading
+    the wrong one restarts finished work."""
+    wt = TaskFile(path)
+    base, branch = task_base(wt), task_branch(wt)
+    for ref, final_only in ((base, True), (branch, False)):
+        if not branch_exists(ref) or current_branch() == ref:
+            copy = wt if current_branch() == ref else None
+        else:
+            r = git("show", f"{ref}:{rel(path)}", check=False)
+            copy = TaskFile.from_text(r.stdout, path) if r.returncode == 0 else None
+        if copy is None:
+            continue
+        if final_only:
+            if copy.get("status") in config.FINAL_STATUSES:
+                return copy
+        else:
+            return copy
+    return wt
+
+
+def sync_task_file(path: str, from_ref: str, message: str) -> bool:
+    """Copy tasks/<file> from a ref into the current branch and commit it if it differs."""
+    r = git("show", f"{from_ref}:{rel(path)}", check=False)
+    if r.returncode != 0:
+        return False
+    with open(path, encoding="utf-8") as f:
+        if f.read() == r.stdout:
+            return False
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(r.stdout)
+    git("add", "--", rel(path))
+    git("commit", "-q", "-m", message)
+    return True
+
+
 def approved(task_id: str, base: str = "") -> bool:
     """`<id> approved` in tasks/approvals.txt — on the base branch (where the owner edits it),
     on main, or in the working tree; any of them counts."""
