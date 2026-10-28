@@ -102,3 +102,5 @@ ac_add_options MOZ_TELEMETRY_REPORTING=
 # Allow loading unsigned extensions
 export MOZ_REQUIRE_SIGNING=
 mk_add_options MOZ_REQUIRE_SIGNING=
+# BB(layer): BB build flags, after Zen's common flags so they add or override
+. "$topsrcdir/../configs/bb/mozconfig"

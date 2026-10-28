@@ -1,0 +1,5 @@
+# BB macOS build flags (ADR-0002 Границы), sourced from configs/bb/mozconfig.
+#
+# What goes here: macOS release flags (PGO/LTO/SDK) and macOS strip flags
+# (--disable-*, MOZ_*=). Who decides them: E0 and ADR-0003.
+# Rule: add or override Zen's flags, never copy them.

@@ -6,7 +6,7 @@ prefix: layer
 kind: feature
 role: developer-hard
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0004-bb-mozconfig-hook
 depends_on: [0001]
@@ -24,7 +24,7 @@ returns: 0
 sessions: 0
 reviewed_sha: d893683d24fc6bc1d82692706219234775470180
 qa_sha: d893683d24fc6bc1d82692706219234775470180
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Give BB its own build-flag fragments, as ADR-0002 §Границы and the hook table in Решение 1 require:
