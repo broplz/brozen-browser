@@ -8,6 +8,9 @@ T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 export TMPDIR="$T" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+. "$here/rebase_fixture.sh"
+stub_env # steps 5-9 must never reach the real npm
+make_engine
 
 check() { # check <message> <command…>
   local msg="$1"

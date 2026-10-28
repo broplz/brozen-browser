@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# BB rebase runbook (ADR-0002 Решение 4), steps 1-4: preflight, fetch, recon, rebase/<tag>.
+# BB rebase runbook (ADR-0002 Решение 4): steps 1-4 preflight, fetch, recon, rebase/<tag>;
+# steps 5-9 deps, engine, patches, import, build, lint (post_rebase).
 #   rebase.sh <zen-tag>              run steps 1-4
 #   rebase.sh --continue <zen-tag>   resume after the conflicts of step 4 were resolved
 # Exit: 0 ok · 1 failure · 2 usage · 3 stopped on a git conflict.
-# Env overrides: BB_REPO_DIR BB_MAIN_BRANCH BB_UPSTREAM_REMOTE BB_MIN_FREE_GB BB_GTAR BB_LOG_DIR.
+# Env overrides: BB_REPO_DIR BB_MAIN_BRANCH BB_UPSTREAM_REMOTE BB_MIN_FREE_GB BB_GTAR BB_LOG_DIR
+#   BB_ENGINE_DIR BB_TARBALL_DIR BB_PATCHES NVM_DIR.
 # Never touches the main branch, never publishes anything, never deletes branches.
 set -euo pipefail
 
@@ -18,6 +20,10 @@ BB_GTAR="${BB_GTAR:-gtar}"
 
 LAYER_YAML="$BB_REPO_DIR/src/bb/layer.yaml"
 BUILD_CONFIG="surfer.json"
+BB_ENGINE_DIR="${BB_ENGINE_DIR:-$BB_REPO_DIR/engine}"
+BB_TARBALL_DIR="${BB_TARBALL_DIR:-$BB_REPO_DIR/.$(basename "$BUILD_CONFIG" .json)/engine}"
+BB_PATCHES="${BB_PATCHES:-$BB_ROOT/scripts/bb/patches.sh}"
+export BB_ENGINE_DIR
 TOOLCHAIN_FILES=".nvmrc rust-toolchain.toml package-lock.json requirements.txt"
 
 usage() {
@@ -146,12 +152,84 @@ do_rebase() {
   return 3
 }
 
-# Steps 5-9 are task 0014.
-post_rebase() {
-  echo "post-rebase: steps 5-9 are task 0014"
+# npm (and nvm) run with the repo as cwd; every npm call reports its own failure
+npm_or_fail() { # npm_or_fail <what> <cmd…>
+  local what="$1"
+  shift
+  "$@" || { say_fail "$what failed"; return 1; }
 }
 
-# run_step <name> — step "<name>" do_<name>; map its failure to the exit codes of the header
+# ---- step 5 -------------------------------------------------------------------------------
+# nvm changes PATH, so it runs in the main shell (a step runs in a pipe subshell); output goes to the log.
+use_node() {
+  local x rc=0
+  x="$(base_zen)"
+  [ "$(g show "refs/tags/$x:.nvmrc" 2>/dev/null)" = "$(g show "refs/tags/$Y:.nvmrc" 2>/dev/null)" ] && return 0
+  echo "deps: .nvmrc changed, nvm use"
+  set +eu
+  . "$NVM_DIR/nvm.sh" && nvm use
+  rc=$?
+  set -eu
+  return "$rc"
+}
+
+do_deps() {
+  [ "${NVM_RC:-0}" = 0 ] || { say_fail "nvm use failed"; return 1; }
+  npm_or_fail "npm ci" npm ci
+}
+
+# ---- step 6 -------------------------------------------------------------------------------
+# prune_tarballs — keep the 2 newest Firefox source tarballs
+prune_tarballs() {
+  local f
+  { ls -t "$BB_TARBALL_DIR"/firefox-*.source.tar.xz 2>/dev/null || true; } | tail -n +3 | while read -r f; do
+    rm -f "$f"
+  done
+}
+
+do_engine() {
+  local fx fy
+  fx="$(tag_firefox "$(base_zen)")"
+  fy="$(tag_firefox "$Y")"
+  if [ "$fx" = "$fy" ]; then
+    echo "engine: firefox $fx unchanged, reset in place (objdir kept)"
+    git -C "$BB_ENGINE_DIR" reset -q &&
+      git -C "$BB_ENGINE_DIR" checkout -q -- . &&
+      git -C "$BB_ENGINE_DIR" clean -fdxq -e 'obj-*' || { say_fail "engine reset failed"; return 1; }
+    return 0
+  fi
+  echo "engine: firefox $fx -> $fy, re-download"
+  rm -rf "$BB_ENGINE_DIR" || { say_fail "cannot remove $BB_ENGINE_DIR"; return 1; }
+  npm_or_fail "npm run download" npm run download || return 1
+  [ "${fx%%.*}" = "${fy%%.*}" ] || npm_or_fail "npm run bootstrap" npm run bootstrap || return 1
+  prune_tarballs
+}
+
+# ---- step 7 -------------------------------------------------------------------------------
+do_patches() {
+  bash "$BB_PATCHES" check || {
+    say_fail "stop: BB patch check failed — fix with git apply --reject in engine/, patches.sh export, check again"
+    return 1
+  }
+}
+
+# ---- steps 8-9 ----------------------------------------------------------------------------
+do_import() { npm_or_fail "npm run import" npm run import; }
+do_build() { npm_or_fail "npm run build" caffeinate -dims npm run build -- --jobs 6; }
+do_lint() { npm_or_fail "npm run lint" npm run lint; }
+
+post_rebase() {
+  local n
+  cd "$BB_REPO_DIR"
+  echo "post-rebase: steps 5-9" | tee -a "$BB_LOG"
+  NVM_RC=0
+  use_node >>"$BB_LOG" 2>&1 || NVM_RC=$?
+  for n in deps engine patches import build lint; do
+    run_step "$n" post
+  done
+}
+
+# run_step <name> [post] — step "<name>" do_<name>; map its failure to the exit codes of the header
 run_step() {
   local rc=0 msg
   step "$1" "do_$1" || rc=$?
@@ -161,6 +239,7 @@ run_step() {
   esac
   msg="$({ grep '^rebase: ' "$BB_LOG" || true; } | tail -n 1)"
   echo "${msg:-rebase: step $1 failed (exit $rc)}" >&2
+  if [ -n "${2:-}" ]; then echo "stop: $1" >&2; fi
   exit 1
 }
 
@@ -179,7 +258,7 @@ if [ "$cont" = 1 ]; then
   BB_LOG="$({ ls -t "$BB_LOG_DIR"/rebase-"$Y"-*.log 2>/dev/null || true; } | head -n 1)"
   if [ -n "$BB_LOG" ]; then export BB_LOG; else bb_log_open "rebase-$Y" >/dev/null; fi
   echo "continue: $Y" | tee -a "$BB_LOG"
-  post_rebase | tee -a "$BB_LOG"
+  post_rebase
   exit 0
 fi
 
@@ -187,4 +266,4 @@ bb_log_open "rebase-$Y" >/dev/null
 for n in preflight fetch recon rebase; do
   run_step "$n"
 done
-post_rebase | tee -a "$BB_LOG"
+post_rebase
