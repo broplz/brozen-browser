@@ -1,0 +1,2 @@
+- [Task shapes log](project_task_shapes.md) — planned tasks, sizes, outcomes (first try/returned/split)
+- [Bash hook quirks](feedback_bash_hooks.md) — "surfer" in any command is blocked; no ls outside repo
