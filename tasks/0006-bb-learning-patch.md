@@ -6,7 +6,7 @@ prefix: layer
 kind: patch
 role: developer
 size: S
-status: ready
+status: blocked
 base: feat/layer
 branch: task/0006-bb-learning-patch
 depends_on: [0013, 0005]
@@ -20,10 +20,10 @@ allowed_paths:
   - engine/browser/base/content/browser.js
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#риски-и-план-проверки-фаза-0-до-7-ноября
 returns: 0
-sessions: 0
+sessions: 1
 reviewed_sha:
 qa_sha:
-blocked_reason:
+blocked_reason: hook blocks editing engine/browser/base/content/browser.js (scratch file needed for patches.sh export)
 ---
 ## Goal
 Run ADR-0002 план проверки п.2: author the first BB patch, a learning one, on `browser/base/content/browser.js`
@@ -73,6 +73,14 @@ The reset → import leg is the owner's, because agents may not reset the engine
   import, that is R2 materialising: Handoff with the import part of the build log triage, set status blocked. Do not work around it.
 
 ## Handoff
+Done: README.md written (src/bb/patches/layer/learning-browser-js/README.md), committed.
+Failed: the Edit on engine/browser/base/content/browser.js is blocked by the guard_paths.py hook
+("engine/ is generated ... developer-hard task"), although the task's allowed_paths and Notes require it
+as the scratch file. Without it `patches.sh export` has nothing to export; a hand-written patch is forbidden (DoD 2).
+Also: scripts/bb/patches.sh is not executable (`permission denied` when run directly); `bash scripts/bb/patches.sh status` works.
+Planned edit: after the `MacUserActivityUpdater.updateLocation(...)` method (engine line ~2512, before the
+"Potentially gets a URI for a MozBrowser" doc comment), add a 3-line `// BB(layer): learning patch ...` comment.
+Next: needs developer-hard (or the hook allowed for this task), then export, check, build x2, status, round trip.
 
 ## Result
 
