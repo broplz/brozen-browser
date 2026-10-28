@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0002-bb-lib-step
 depends_on: []
