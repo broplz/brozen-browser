@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0009-bb-report-sh
 depends_on: [0002]
@@ -23,7 +23,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 29ddbb871c976554fc1da272e5320fcbdf3166bc
 qa_sha: 29ddbb871c976554fc1da272e5320fcbdf3166bc
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Create `scripts/bb/report.sh`, the maintenance-cost metric of ADR-0002 Решение 4 ("Метрика"). From one rebase log it
