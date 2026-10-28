@@ -35,3 +35,10 @@ build/signing/private_key.pem
 build/signing/private_key.p12
 
 bloat-dump.log
+
+# BB pipeline
+logs/*
+!logs/.gitkeep
+!.claude/
+!CLAUDE.md
+.claude/settings.local.json
