@@ -43,3 +43,4 @@ logs/*
 !CLAUDE.md
 .claude/settings.local.json
 !tasks/backlog.md
+.claude/replay/
