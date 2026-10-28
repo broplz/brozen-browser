@@ -6,7 +6,7 @@ set -a; [ -f .env ] && . ./.env; set +a
 export BB_NOTIFY_CMD="/bin/bash scripts/agents/notify.sh"
 MAX="${1:-20}"
 LOG="logs/night-$(date +%Y%m%d-%H%M%S).log"
-if ! claude auth status 2>/dev/null | grep -q ""loggedIn": true"; then
+if ! claude auth status 2>/dev/null | grep -q loggedIn.*true; then
   echo "claude not logged in" | $BB_NOTIFY_CMD; exit 1
 fi
 echo "night run started, max $MAX tasks" | $BB_NOTIFY_CMD
