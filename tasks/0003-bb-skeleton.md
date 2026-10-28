@@ -6,7 +6,7 @@ prefix: layer
 kind: feature
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0003-bb-skeleton
 depends_on: [0001]
@@ -22,10 +22,10 @@ allowed_paths:
   - src/bb/BBComponents.manifest
   - prefs/bb/bb.yaml
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#риски-и-план-проверки-фаза-0-до-7-ноября
-returns: 0
+returns: 1
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 783ec8ef4d8b324e209c248e8a1c79ab901545b9
+qa_sha: 783ec8ef4d8b324e209c248e8a1c79ab901545b9
 blocked_reason:
 ---
 ## Goal
@@ -72,7 +72,66 @@ the M cap). After 0013, `BBStartup.mjs` is the last script Zen preloads and logs
 ## Handoff
 
 ## Result
+Round 2: fixed Review item 1 — `src/bb/bb-assets.inc.xhtml` now uses the `# ` preprocessor header
+and placeholder comment, as in `zen-assets.inc.xhtml`. Not re-run: lint/layer_lint (comment-only
+change in a non-linted file).
+
+Round 1: added the six allowed files (jar.inc.mn with one BBStartup entry, BBStartup.mjs logging
+`BBStartup: bb.layer.version=<n>`, header+comment-only moz.build / bb-assets.inc.xhtml /
+BBComponents.manifest, prefs/bb/bb.yaml with bb.layer.version = 1). Verified: `test.sh lint` OK
+(0 problems); `layer_lint.py 0003` 0 fail (1 size WARN: 6 files vs cap 5, no production lines).
+Nothing reaches the build until task 0013. Open: none.
 
 ## Review
+APPROVE
+
+Checklist notes (round 2):
+- Spec/DoD: round-1 item 1 is fixed. src/bb/bb-assets.inc.xhtml:1-5 now has the three `# ` MPL
+  lines and a `# ` placeholder, as in zen-assets.inc.xhtml. DoD 1–4 and 7 still hold (6 files, 33 lines).
+- Scope: only the six allowed_paths changed. No Zen files, layer.yaml or tests touched.
+- Layer: layer_lint re-run gives 0 fail and 1 size WARN. The WARN comes from the teamlead's
+  allowed_paths (6 files vs the S cap of 5). There are no class-2/3 edits and the pref is `bb.*`
+  only. Nothing reaches the build yet (F2 holds).
+- Correctness: unchanged since round 1. BBStartup.mjs only logs the one line, with no listeners
+  and no async work.
+- Verification: the Result says lint was not re-run for the comment-only change, and that is
+  accurate. Every `#` line in a preprocessed include is stripped, so the risk is negligible.
+- Hygiene: no TODOs or secrets, and everything is in English.
+
+---
+REQUEST_CHANGES
+1. src/bb/bb-assets.inc.xhtml:1-5 — the MPL header and the placeholder comment use XML comments
+   (`<!-- … -->`). The teamlead note says to copy the header from the neighbouring Zen file of the
+   same type. That file, `src/browser/base/content/zen-assets.inc.xhtml:1-3`, uses preprocessor
+   `# ` lines, and no file under src/zen or src/browser/base/content has an XML-style MPL header.
+   This file is `#include`d into the preprocessed browser.xhtml (task 0013). Because of that,
+   `<!-- -->` comments would ship in the built markup, while `# ` comments are stripped at
+   preprocessing. Fix: use the same three `# ` header lines as zen-assets.inc.xhtml, and write
+   the placeholder as `# <link rel="stylesheet"> elements for BB CSS go here (none yet).`
+
+Checklist notes:
+- Spec/DoD: DoD 1 holds (one entry, same `(` column as src/zen/folders/jar.inc.mn). DoD 2 holds
+  (`console.info` with `getIntPref("bb.layer.version", 0)`). DoD 3 holds (only `bb.layer.version`,
+  value 1, no sticky/condition). DoD 4 holds except item 1. DoD 6 re-run: 0 fail. DoD 7 holds: 6 files.
+- Scope: only the six allowed_paths. No Zen files, layer.yaml or tests touched.
+- Layer: no class-2/3 edits, so no BB(eN) markers needed. Pref is `bb.*` only. Nothing is in
+  engine/. Nothing reaches the build yet, so stock Zen behaviour is unchanged (F2).
+- Correctness: BBStartup.mjs runs in the window global (`global: "current"`), so `Services` is
+  available. It adds no listeners and has no async work.
+- Verification: the Result claims match my layer_lint re-run. The size WARN (6 files vs the S cap
+  of 5) comes from the teamlead's allowed_paths, not from the developer.
+- Hygiene: no TODOs or secrets, English only, one intended log line.
 
 ## QA
+PASS
+
+1. DoD 1: `src/bb/jar.inc.mn` has one entry, `content/browser/bb/BBStartup.mjs … (../../bb/BBStartup.mjs)`, in Zen's column style.
+2. DoD 2: `src/bb/BBStartup.mjs:5-7` is a `console.info` of `BBStartup: bb.layer.version=${Services.prefs.getIntPref("bb.layer.version", 0)}`.
+3. DoD 3: `prefs/bb/bb.yaml` has `- name: bb.layer.version` and `value: 1`. The only `name:` line in prefs/bb/ is `bb.*`, so the non-bb count is 0.
+4. DoD 4: moz.build, bb-assets.inc.xhtml and BBComponents.manifest each hold the MPL header (`# ` lines) plus one comment.
+5. DoD 5: `scripts/agents/test.sh lint` → OK, 0 problems. Log: logs/test-lint-20261029-011819.log.
+6. DoD 6: layer_lint → 0 fail, 1 size WARN (6 files vs cap 5, from the task's allowed_paths).
+7. DoD 7: `diff.sh --names` lists exactly the six allowed files (33 insertions).
+Build type is none, so no build was run.
+
+For the human: nothing marked `[human]`.
