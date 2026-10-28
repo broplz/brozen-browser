@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0009-bb-report-sh
 depends_on: [0002]
@@ -19,10 +19,10 @@ allowed_paths:
   - scripts/bb/tests/report_test.sh
   - docs/rebase/README.md
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4--runbook-ребейза
-returns: 0
+returns: 1
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 29ddbb871c976554fc1da272e5320fcbdf3166bc
+qa_sha: 29ddbb871c976554fc1da272e5320fcbdf3166bc
 blocked_reason:
 ---
 ## Goal
@@ -82,7 +82,47 @@ rebase, BB patch did not apply, Zen patch hunk had to be edited. The script read
 ## Handoff
 
 ## Result
+Round 2 (review items 1-5):
+1. README upsert: missing README → error, exit 1; removed `2>/dev/null || true` and the fallback; `$tmp` is in the EXIT trap; written with `cat "$tmp" >"$README"` (keeps the file mode).
+2. Removed the unused `rest()`.
+3. Test calls `"$BASH" "$report"`.
+4. Test asserts `none` separately under `## Conflicts` and `## Conflicts by epic`.
+5. Both awk passes share one `STEPLIB` (`is_hdr`, `is_ftr`, `val`), so step-line parsing is defined once.
+Verified: `/bin/bash scripts/bb/tests/report_test.sh` → PASS; `bash -n scripts/bb/report.sh` → no output. `diff.sh --names` not re-run.
+
+Round 1: added `scripts/bb/report.sh` (awk-based log parser, upserts the README row), `scripts/bb/tests/report_test.sh`, and `docs/rebase/README.md`.
+Verified: `/bin/bash scripts/bb/tests/report_test.sh` prints PASS (it ran on macOS with /bin/bash 3.2); the test writes only under mktemp. `bash -n` and `diff.sh --names` were not run separately.
+Open: the README row's firefox is taken from `recon: firefox` (`<fy>`).
 
 ## Review
+APPROVE
+Round 2: all five items from round 1 are fixed.
+1. Item 1: a missing README now gives exit 1. Nothing is swallowed, `$tmp` is in the EXIT trap, and the write uses `cat >`, so the file mode is kept (report.sh:113-125).
+2. Item 2: `rest()` is gone.
+3. Item 3: the test calls `"$BASH" "$report"` everywhere.
+4. Item 4: the test checks `none` separately under `## Conflicts` and under `## Conflicts by epic` (report_test.sh:76-79).
+5. Item 5: the step-line helpers live once, in `STEPLIB` (report.sh:20-24).
+
+Checklist: (1) Spec: the DoD 3a-g, the row format, the `.md` layout and the conflict kinds match ## Notes and ADR-0002 Решение 4. (2) Scope: `diff.sh --names` lists only the 3 allowed_paths. (3) Layer rules: N/A, because no Zen files, engine files, prefs or patches are touched, and layer_lint reports 0 fail and 0 warn. (4) Correctness: `set -euo pipefail` is set, the temp files are cleaned up by the trap, and the exit codes are 0/1/2 as documented. (5) Verification: I ran the checks myself. `bash -n` printed nothing, `/bin/bash scripts/bb/tests/report_test.sh` printed `PASS`, and `git status` was clean afterwards, so docs/rebase is unchanged (DoD 5). (6) Hygiene: everything is in English, and there are no TODOs and no secrets.
+
+---
+REQUEST_CHANGES
+1. scripts/bb/report.sh:109-122: the README upsert hides failures. `2>/dev/null || true` swallows awk errors, such as a missing or unreadable README. The `[ ! -s "$tmp" ]` fallback then writes a README that contains only the row, which wipes the explanation and the table header. Fix: if `$README` is missing, print an error and exit 1 (or seed it from the header). Remove `2>/dev/null || true`. Add `$tmp` to the EXIT trap. Write with `cat "$tmp" >"$README"` instead of `mv`, because mv carries mktemp's 0600 mode onto docs/rebase/README.md.
+2. scripts/bb/report.sh:45: the awk function `rest()` is never called. It is dead code, so remove it.
+3. scripts/bb/tests/report_test.sh:38,60,74,80,82,84: `bash "$report"` resolves through PATH, so on a machine with Homebrew bash 5 first on PATH, DoD 2 (bash 3.2) is not exercised. Use `"$BASH" "$report"`.
+4. scripts/bb/tests/report_test.sh:76-77: the check for DoD 3f is too weak. c.log has no expected conflicts, so `## Expected conflicts` also prints `none`, and `≥ 2` passes even when one conflict table is not `none`. Assert the `none` under `## Conflicts` and under `## Conflicts by epic` separately, or require exactly 3.
+5. (minor, same round) scripts/bb/report.sh:21-25 vs 46-49: two awk passes each parse the header and footer, and the duration parsing (`sub(/^duration=/…)`) is duplicated. Either make the first pass the only place that parses step lines, or share the regexes through `-v`, so the two cannot drift apart.
+
+Checked: `bash -n` passes and prints nothing. `/bin/bash scripts/bb/tests/report_test.sh` prints PASS. `diff.sh --names` lists only the 3 allowed_paths. layer_lint reports 0 fail. Spec: the conflict kinds, the hours formula, the `.md` layout, and the row format match ## Notes and ADR-0002 Решение 4. Scope: OK. Layer rules: no Zen or engine files and no prefs, so N/A. The Result is honest that bash -n and --names were not run.
 
 ## QA
+PASS
+1. DoD 1: `bash -n scripts/bb/report.sh` → exit 0, no output.
+2. DoD 2: `/bin/bash scripts/bb/tests/report_test.sh` → `PASS`.
+3. DoD 3 (a-g): covered by the test, which passes. Reviewer read the assertions against the spec.
+4. DoD 4: `docs/rebase/README.md` has 4 explanation lines and ends with the required header and `|---|…` separator.
+5. DoD 5: `git status --short` is clean after the test run, so the real `docs/rebase/` is unchanged.
+6. DoD 6: `diff.sh --names` lists only report.sh, report_test.sh and docs/rebase/README.md.
+7. Lint: `scripts/agents/test.sh lint` → OK, 0 problems; layer_lint 0 fail, 0 warn. Build type `none`, so I did not run a build.
+
+For the human: no `[human]` items.
