@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0007-bb-rebase-sh-steps-1-4
 depends_on: [0002, 0005]
@@ -22,7 +22,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 1239fed57f5b1c2eeec0ccd7abbfdb98359719cd
 qa_sha: 1239fed57f5b1c2eeec0ccd7abbfdb98359719cd
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Create `scripts/bb/rebase.sh`, the rebase runbook of ADR-0002 Решение 4, steps 1-4: preflight, fetch of
