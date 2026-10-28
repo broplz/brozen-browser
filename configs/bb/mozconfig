@@ -1,0 +1,11 @@
+# BB build flags (ADR-0002 Границы), sourced by the one hook line at the end of
+# configs/common/mozconfig. Order in the generated mozconfig: Zen common flags,
+# then this file (and mozconfig.macos), then Zen's configs/macos/mozconfig — so
+# Zen's macOS flags still come after BB's.
+#
+# What goes here: release flags (PGO/LTO/SDK) and strip flags (--disable-*,
+# MOZ_*=). Who decides them: E0 and ADR-0003.
+# Rule: add or override Zen's flags, never copy them.
+#
+# BB is macOS-only, so the macOS fragment is sourced unconditionally.
+. "$topsrcdir/../configs/bb/mozconfig.macos"

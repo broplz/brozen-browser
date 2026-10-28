@@ -33,6 +33,10 @@ hooks:
     line: '#include ../bb/BBComponents.manifest'
     epic: layer
     why: registers BB components
+  - file: configs/common/mozconfig
+    line: '. "$topsrcdir/../configs/bb/mozconfig"'
+    epic: layer
+    why: sources BB build flags after Zen's common flags
 
 # Direct edits (<= ~10 lines, marked BB(eN)) in Zen flat files.
 # Entry schema:
