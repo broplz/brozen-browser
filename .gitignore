@@ -42,3 +42,4 @@ logs/*
 !.claude/
 !CLAUDE.md
 .claude/settings.local.json
+!tasks/backlog.md
