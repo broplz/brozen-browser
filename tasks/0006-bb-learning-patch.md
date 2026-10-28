@@ -20,10 +20,10 @@ allowed_paths:
   - engine/browser/base/content/browser.js
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#риски-и-план-проверки-фаза-0-до-7-ноября
 returns: 0
-sessions: 1
+sessions: 0
 reviewed_sha:
 qa_sha:
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Run ADR-0002 план проверки п.2: author the first BB patch, a learning one, on `browser/base/content/browser.js`
