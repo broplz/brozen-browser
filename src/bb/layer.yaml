@@ -1,0 +1,29 @@
+# BB layer registry (ADR-0002 Решение 2): a conflict in src/bb/** belongs to the epic by directory name, anywhere else by this file; a foreign file without an entry is a registry defect.
+
+# Zen base the layer sits on (read by scripts/bb/rebase.sh).
+base:
+  zen: 1.23.4b
+  firefox: 158.0.1
+  commit: 541ee55
+
+# Hook lines in Zen flat files, one entry per line.
+# Entry schema:
+#   - file: <repo-relative path of the Zen flat file>
+#     line: <the exact hook line>
+#     epic: <layer | eN-slug, e.g. e3-little-bb>
+#     why: <one-line reason>
+hooks: []
+
+# Direct edits (<= ~10 lines, marked BB(eN)) in Zen flat files.
+# Entry schema:
+#   - file: <repo-relative path>
+#     epic: <layer | eN-slug>
+#     why: <one-line reason>
+edits: []
+
+# Edits to Zen's own .patch files (only with allow_zen_patch, marker inside the hunk).
+# Entry schema:
+#   - file: <repo-relative path of the .patch>
+#     epic: <layer | eN-slug>
+#     why: <one-line reason>
+zen_patches: []
