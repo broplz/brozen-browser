@@ -8,4 +8,4 @@ Since owner commit f43e42814 (2026-10-28), `bash -n <file>` and `/bin/bash <scri
 
 **Why:** in 0002 the earlier sandbox denials and the memory files showing up in the git diff blocked the task across several sessions.
 
-**How to apply:** check tests for `bash -c`, which resolves through PATH and may pick up Homebrew bash 5, where `"$BASH" -c` is needed to test bash 3.2. Also check for unescaped paths inside `=~` regexes.
+**How to apply:** check tests for `bash -c`, which resolves through PATH and may pick up Homebrew bash 5, where `"$BASH" -c` is needed to test bash 3.2. Also check for unescaped paths inside `=~` regexes. Tests that call `bash "$script"` have the same PATH problem (0009). Also watch for `|| true` / `2>/dev/null` around file rewrites, `mv` of a mktemp file (it carries mode 0600), and `≥ N` counts that other sections can satisfy.
