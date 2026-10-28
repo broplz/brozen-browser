@@ -10,7 +10,9 @@ Planned 2026-10-28 on feat/layer (record outcomes when tasks finish):
 - 0002 scripts/bb/lib.sh + bash-3.2 test script (script, S, build none). The code was approved on the
   first try (review APPROVE). QA returned it for pipeline reasons, not code: the reviewer committed
   .claude/agent-memory files onto the task branch, which broke DoD 6 (diff-only), and the sandbox
-  denied `bash -n` and `/bin/bash test` for all roles. Escalated 2026-10-28.
+  denied `bash -n` and `/bin/bash test` for all roles. Escalated 2026-10-28. The owner fixed both the
+  same day (f43e42814: the commands are allowed, DoD scope goes through diff.sh). Re-spec'd to ready with
+  returns 0 and no code change.
 - 0003 src/bb skeleton, 6 new files, build none
 - 0013 five Zen hook lines + layer.yaml, build ui, needs_approval
 
@@ -19,9 +21,12 @@ files (no build) and Zen hook edits (build ui). The backlog line was annotated a
 
 Lessons:
 - A DoD item of the form "git diff --name-only lists only X" fails when any agent's memory lands on the task branch.
-  Until the owner fixes this, expect that failure again. Do not split the task over it; escalate.
+  Fixed: always use `scripts/agents/diff.sh <task> --names`, which ignores agent memory.
 - Before writing a DoD command, check that it is allowed in dontAsk mode. `bash -n` and `/bin/bash <script>`
-  were denied. Consider a test.sh wrapper or an allowlist request.
+  are allowed since f43e42814.
+- In an unblock run, check `git log` for owner commits after the escalation. The blocker may already be
+  fixed, and then a re-spec is the right call.
+- An unblock run may start on feat/layer, not on the task branch. Compare with `git diff feat/layer...task/<id>`.
 
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
