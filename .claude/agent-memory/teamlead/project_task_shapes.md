@@ -60,6 +60,11 @@ Planned 2026-10-29 (3rd run) on feat/layer:
 - Hook: commands naming scripts/bb/rebase.sh run only for role rebaser; smoke.sh only rebaser/qa (teamlead too
   can't grep them — use Read). So no `bash -n rebase.sh` in a developer DoD; tests that source it are fine.
 
+Planning run 2026-10-29 (4th): nothing to plan. Every ## Next item has a task file except 0012, still
+escalated (decisions-needed line unanswered). Found-by-agents items (.gitignore negation, patches.sh exec
+bit) were not promoted: they are not on ## Next and are left for the owner to order.
+Outcome: 0010 done.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
