@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0014-bb-rebase-sh-steps-5-9
 depends_on: [0007]
@@ -24,7 +24,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 2a66896d2259bd41f558dc99ab5bb19662a355f7
 qa_sha: 2a66896d2259bd41f558dc99ab5bb19662a355f7
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Fill `post_rebase` in `scripts/bb/rebase.sh` (left by 0007) with ADR-0002 Решение 4 steps 5-9: Node deps, the
