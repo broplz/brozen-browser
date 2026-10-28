@@ -40,7 +40,7 @@ their own entries.
 5. `python3 scripts/agents/layer_lint.py 0001` → no FAIL lines.
 6. `src/bb/README.md` contains the headings `## Layout`, `## Hook lines`, `## Foreign files`,
    `## layer.yaml`; `grep -c "src/bb/patches/<epic>/<name>/" src/bb/README.md` → ≥ 1.
-7. `git diff --name-only feat/layer` lists only the two allowed files plus this task file.
+7. `scripts/agents/diff.sh tasks/0001-layer-registry.md --names` lists only the two allowed files.
 
 ## Notes from teamlead
 - `base` block, exactly (ADR-0002 Решение 3): `zen: 1.23.4b`, `firefox: 158.0.1`, `commit: 541ee55`.
