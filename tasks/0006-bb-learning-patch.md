@@ -4,9 +4,9 @@ title: Learning BB patch on browser/base/content/browser.js, far from Zen's hunk
 epic: layer
 prefix: layer
 kind: patch
-role: developer
+role: developer-hard
 size: S
-status: blocked
+status: ready
 base: feat/layer
 branch: task/0006-bb-learning-patch
 depends_on: [0013, 0005]
@@ -23,7 +23,7 @@ returns: 0
 sessions: 1
 reviewed_sha:
 qa_sha:
-blocked_reason: hook blocks editing engine/browser/base/content/browser.js (scratch file needed for patches.sh export)
+blocked_reason:
 ---
 ## Goal
 Run ADR-0002 план проверки п.2: author the first BB patch, a learning one, on `browser/base/content/browser.js`
@@ -37,16 +37,16 @@ The reset → import leg is the owner's, because agents may not reset the engine
    `adr: docs/adr/0002-bb-layer-and-rebase-runbook.md`, `files:` = `- browser/base/content/browser.js`,
    `upstream: none` and `rebuild: ui`, followed by the four sections `# Why`, `# What it changes`,
    `# How to verify` and `# What usually breaks on rebase`.
-2. The `.patch` was produced by `scripts/bb/patches.sh export src/bb/patches/layer/learning-browser-js`
+2. The `.patch` was produced by `bash scripts/bb/patches.sh export src/bb/patches/layer/learning-browser-js`
    (not hand-written, not `npm run export`). It touches only `browser/base/content/browser.js` and adds
    comment lines only, one of which contains `BB(layer)`.
-3. `scripts/bb/patches.sh check` → `OK layer/learning-browser-js`, exit 0.
+3. `bash scripts/bb/patches.sh check` → `OK layer/learning-browser-js`, exit 0.
 4. `scripts/agents/build.sh ui` → `BUILD RESULT: OK` (import included).
-5. `scripts/bb/patches.sh status` → `applied layer/learning-browser-js`.
+5. `bash scripts/bb/patches.sh status` → `applied layer/learning-browser-js`.
 6. `grep -c "BB(layer)" engine/browser/base/content/browser.js` → `1`.
 7. A second `scripts/agents/build.sh ui` in a row → `BUILD RESULT: OK`. DoD 5 and 6 hold again, with the
    count still `1` (the import is idempotent, R3).
-8. Round trip (R2): after DoD 7, run `scripts/bb/patches.sh export src/bb/patches/layer/learning-browser-js`
+8. Round trip (R2): after DoD 7, run `bash scripts/bb/patches.sh export src/bb/patches/layer/learning-browser-js`
    again. `git status --porcelain src/bb/patches` then prints nothing, so export reproduced the committed patch byte for byte.
 9. `scripts/agents/diff.sh tasks/0006-bb-learning-patch.md --names` lists only the two files under
    `src/bb/patches/layer/learning-browser-js/`.
@@ -71,6 +71,10 @@ The reset → import leg is the owner's, because agents may not reset the engine
 - If `check` reports `FAIL … zen`, the hunk is too close to Zen's. Move it. Do not touch Zen's patch.
 - Strikes: 3 failed ui builds → write the Handoff and set status blocked. If `status` says not-applied after a green
   import, that is R2 materialising: Handoff with the import part of the build log triage, set status blocked. Do not work around it.
+
+- Re-spec 2026-10-29 (unblock): role is now developer-hard — guard_paths.py lets only developer-hard/rebaser
+  edit engine/ scratch. patches.sh has no exec bit, so every DoD runs it as `bash scripts/bb/patches.sh …`.
+  README.md is already committed; start from the planned edit in ## Handoff.
 
 ## Handoff
 Done: README.md written (src/bb/patches/layer/learning-browser-js/README.md), committed.

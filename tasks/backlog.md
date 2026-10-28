@@ -23,6 +23,7 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 ## Found by agents
 (one line each: what, where, why it matters — the teamlead promotes these into tasks)
 - .gitignore:29 bare `mozconfig` ignores configs/bb/mozconfig (0004 force-added it); add `!configs/bb/mozconfig` so future BB edits are not silently skipped.
+- scripts/bb/patches.sh lacks the exec bit (0006: `permission denied` when run directly); needs `chmod +x` (git mode 100755) — npm run bb:* and DoDs expect it.
 
 ## For the owner
 - commit ADR-0001 to docs/adr/0001-little-bb-floating-window.md (status Proposed → Accepted?)

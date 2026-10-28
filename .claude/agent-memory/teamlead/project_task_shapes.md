@@ -37,6 +37,11 @@ Lessons:
   fixed, and then a re-spec is the right call.
 - An unblock run may start on feat/layer, not on the task branch. Compare with `git diff feat/layer...task/<id>`.
 
+- 0006 blocked first session: role developer could not edit engine/ scratch (guard_paths.py: only
+  developer-hard/rebaser). Re-spec'd to developer-hard. Rule: any task whose authoring flow touches engine/
+  (BB patch on a Firefox file) is developer-hard, even if the content is a comment.
+- New scripts may land without the exec bit; write DoDs as `bash scripts/...` unless mode is verified.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
