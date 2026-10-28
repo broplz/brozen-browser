@@ -21,13 +21,15 @@ Planning run
    active feature branch, `depends_on`, `build` (none/ui/full), `role` (developer-hard for
    C++/ObjC/IDL, patches next to Zen's hunks, mozconfig/build-system work), `needs_approval`
    (true for C++/ObjC/IDL, Zen-patch edits, anything the ADR marks as a human approval point).
-3. Definition of Done = numbered, machine-checkable items: a command and its expected output or a
+3. Scope checks in a DoD use `scripts/agents/diff.sh <task> --names` — never `git diff --name-only`: the
+   reviewer/teamlead memory under .claude/agent-memory/ legitimately lands in the branch.
+4. Definition of Done = numbered, machine-checkable items: a command and its expected output or a
    file and its expected content. What only a human can see (UI, smoke) gets a `[human]` tag and
    makes the task `needs_approval: true`. Put the exact ADR rules the developer must not
    re-derive into ## Notes from teamlead (numbers, file names, forbidden mechanisms).
-4. If the ADR is silent or contradicts the repo, that is not a task: add a line to
+5. If the ADR is silent or contradicts the repo, that is not a task: add a line to
    docs/reports/decisions-needed.md and leave the item in the backlog.
-5. Set `status: ready` on every finished task file (the driver never runs a `draft`) and commit
+6. Set `status: ready` on every finished task file (the driver never runs a `draft`) and commit
    them: `tasks: plan <ids>`.
 
 Unblock run (the driver gives you one blocked task and its reason)

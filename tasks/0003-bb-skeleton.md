@@ -46,7 +46,7 @@ the M cap). After 0013, `BBStartup.mjs` is the last script Zen preloads and logs
    contain only the MPL header plus one comment saying what goes there (no entries yet).
 5. `scripts/agents/test.sh lint` → no new errors in src/bb/ or prefs/bb/.
 6. `python3 scripts/agents/layer_lint.py 0003` → no FAIL lines.
-7. `git diff --name-only feat/layer` lists only the six allowed files plus this task file.
+7. `scripts/agents/diff.sh tasks/0003-bb-skeleton.md --names` lists only the six allowed files.
 
 ## Notes from teamlead
 - File roles (ADR-0002 Решение 1):
