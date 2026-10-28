@@ -22,3 +22,5 @@
 #include ../../../zen/space-routing/jar.inc.mn
 #include ../../../zen/share/jar.inc.mn
 #include ../../../zen/library/jar.inc.mn
+# BB(layer): BB layer jar manifest
+#include ../../../bb/jar.inc.mn

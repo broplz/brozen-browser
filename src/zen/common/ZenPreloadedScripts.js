@@ -29,6 +29,7 @@
     "chrome://browser/content/zen-components/ZenEmojiPicker.mjs",
     "chrome://browser/content/zen-components/ZenDownloadAnimation.mjs",
     "resource:///modules/zen/share/ZenShareManager.mjs",
+    "chrome://browser/content/bb/BBStartup.mjs", // BB(layer): must stay last
   ];
 
   for (let script of scripts) {

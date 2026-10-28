@@ -27,3 +27,5 @@ DIRS += [
     "tabs",
     "window-drag",
 ]
+# BB(layer): plug the BB layer into the build
+DIRS += ["../bb"]

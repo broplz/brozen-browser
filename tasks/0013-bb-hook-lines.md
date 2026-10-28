@@ -6,7 +6,7 @@ prefix: layer
 kind: feature
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0013-bb-hook-lines
 depends_on: [0001, 0003]
@@ -26,7 +26,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 602cdf102d246f0c99cf8b77a2366f3dfd337e20
 qa_sha: 602cdf102d246f0c99cf8b77a2366f3dfd337e20
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Add the five one-line hooks from ADR-0002 Решение 1 (hook table) to Zen's flat files so the

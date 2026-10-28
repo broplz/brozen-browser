@@ -12,7 +12,27 @@ base:
 #     line: <the exact hook line>
 #     epic: <layer | eN-slug, e.g. e3-little-bb>
 #     why: <one-line reason>
-hooks: []
+hooks:
+  - file: src/zen/moz.build
+    line: 'DIRS += ["../bb"]'
+    epic: layer
+    why: builds src/bb/ as a Zen subdirectory
+  - file: src/browser/base/content/zen-assets.jar.inc.mn
+    line: '#include ../../../bb/jar.inc.mn'
+    epic: layer
+    why: registers BB chrome files in the browser jar
+  - file: src/browser/base/content/zen-assets.inc.xhtml
+    line: '#include ../../../bb/bb-assets.inc.xhtml'
+    epic: layer
+    why: includes BB assets into browser.xhtml
+  - file: src/zen/common/ZenPreloadedScripts.js
+    line: '"chrome://browser/content/bb/BBStartup.mjs", // BB(layer): must stay last'
+    epic: layer
+    why: loads BBStartup.mjs after all Zen modules
+  - file: src/zen/ZenComponents.manifest
+    line: '#include ../bb/BBComponents.manifest'
+    epic: layer
+    why: registers BB components
 
 # Direct edits (<= ~10 lines, marked BB(eN)) in Zen flat files.
 # Entry schema:
