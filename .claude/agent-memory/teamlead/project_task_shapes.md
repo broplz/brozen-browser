@@ -25,6 +25,14 @@ Planned 2026-10-29 on feat/layer:
 - 0006 learning patch on browser.js via patches.sh export, S, build ui x2, needs_approval
   (engine reset leg is [human]; engine/browser.js is in allowed_paths as scratch, watch whether hooks allow it)
 
+Planned 2026-10-29 (2nd run) on feat/layer:
+- 0007 rebase.sh steps 1-4 + --continue, M, git fixture (bare upstream + clone), build none
+- 0014 rebase.sh steps 5-9 (post_rebase), M, PATH stubs for npm/caffeinate, may edit 0007's test to add stubs
+- 0008 smoke.sh + smoke.d/e0.txt, S; 0009 report.sh + docs/rebase/README.md, S
+- Backlog 0007 (L, steps 1-9) pre-split: L script with git-fixture test judged > one session.
+- Log-line contract (recon:/conflict:/FAIL/smoke:) is written into 0007/0008/0009/0014 notes; keep it identical
+  in 0011/0012. Watch whether 0009 parses it first try.
+
 Pre-split rule applied: backlog 0003 touched 12 files, over the M cap of 10. It was split into BB-owned
 files (no build) and Zen hook edits (build ui). The backlog line was annotated and 0006's dependency moved to 0013.
 
