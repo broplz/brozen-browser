@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0002-bb-lib-step
 depends_on: []
@@ -20,8 +20,8 @@ allowed_paths:
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4--runbook-ребейза
 returns: 0
 sessions: 0
-reviewed_sha: 907b30338aee752661cb591c15196bfea0120d57
-qa_sha: 907b30338aee752661cb591c15196bfea0120d57
+reviewed_sha: 2da2e6482c7b227c95745eb42141a003c3fe612f
+qa_sha: 2da2e6482c7b227c95745eb42141a003c3fe612f
 blocked_reason: 
 ---
 ## Goal
@@ -84,6 +84,13 @@ Also: QA items 2–3 (`bash -n`, `/bin/bash …lib_test.sh`) need Bash permissio
 Next: the owner/driver must drop those two `.claude/` files from the branch (`git rm` them and commit), and grant Bash permission for the DoD 1–2 commands. No code change is needed.
 
 ## Result
+Round 2 (no code change): ran the DoD exactly as written.
+- DoD 1 `bash -n scripts/bb/lib.sh` → exit 0, no output.
+- DoD 2 `/bin/bash scripts/bb/tests/lib_test.sh` → `PASS`.
+- DoD 5 `grep -c -E "^set -" scripts/bb/lib.sh` → `0`.
+- DoD 6 `scripts/agents/diff.sh tasks/0002-bb-lib-step.md --names` → only scripts/bb/lib.sh and scripts/bb/tests/lib_test.sh.
+The reviewer's two optional items were not applied.
+
 Round 1: added `scripts/bb/lib.sh` (BB_ROOT, BB_LOG_DIR, `bb_log_open`, `step`) and `scripts/bb/tests/lib_test.sh` (assertions a–g, plus step-without-BB_LOG → 2).
 Verified: `bash scripts/bb/tests/lib_test.sh` → `PASS`; `grep -c -E "^set -" scripts/bb/lib.sh` → 0.
 Not run: `bash -n scripts/bb/lib.sh` was denied by the sandbox (the lib is sourced successfully by the test, so it parses), and I did not run it under `/bin/bash` by that path (the call was denied; the test ran via `bash`, which may not be 3.2). Not checked: `git diff --name-only`.
@@ -91,6 +98,17 @@ Open: `step` uses `&& rc=… || rc=…` so a caller's `set -e` cannot abort befo
 
 ## Review
 APPROVE
+
+Round 2 (re-review; the code is unchanged since round 1, head 2da2e6482):
+1. Spec: the code is unchanged, so the round-1 spec check still applies. It meets the DoD and ADR-0002 Решение 4 "Логирование".
+2. Scope: `scripts/agents/diff.sh … --names` lists only scripts/bb/lib.sh and scripts/bb/tests/lib_test.sh (DoD 6, re-run by the reviewer). The `.claude/agent-memory/` files no longer show up in the diff.
+3. Layer rules: n/a (no Zen/Firefox files, prefs or engine/). layer_lint: 5 files, 29 production lines, 0 fail, 0 warn.
+4. Correctness: no change since round 1.
+5. Verification: the reviewer re-ran every claim in Result round 2 and got the same outputs. `bash -n scripts/bb/lib.sh` gave exit 0 and no output. `/bin/bash scripts/bb/tests/lib_test.sh` printed `PASS`. `grep -c -E "^set -"` printed `0`. diff.sh `--names` listed the two files.
+6. Hygiene: OK. The two optional round-1 items are still open and still non-blocking.
+
+---
+Round 1:
 
 Checklist:
 - Spec: matches ADR-0002 Решение 4 "Логирование" (header with time, `2>&1 | tee -a`, duration, exit code) and the teamlead interface (BB_ROOT from the lib's own location, BB_LOG_DIR default `$BB_ROOT/../logs` with the env value taking priority, bb_log_open, step returns 2 without BB_LOG, fixed header/footer formats). Nothing extra: no caffeinate/colors/helpers.
@@ -105,11 +123,12 @@ Non-blocking (fix only if the file is touched again):
 2. scripts/bb/tests/lib_test.sh:25 — `$BB_LOG_DIR` is put into the regex unescaped (the `.` in mktemp paths matches any character). Comparing a prefix (`[ "${BB_LOG#$BB_LOG_DIR/}" != "$BB_LOG" ]`) plus a pattern only on the basename would be exact.
 
 ## QA
-FAIL
+PASS
 
-1. DoD 6 fails. Repro: `git diff --name-only feat/layer`. Expected: only `scripts/bb/lib.sh`, `scripts/bb/tests/lib_test.sh` and this task file. Actual: it also lists `.claude/agent-memory/reviewer/MEMORY.md` and `.claude/agent-memory/reviewer/feedback_shell_tests.md`. These are outside allowed_paths, and CLAUDE.md says never to touch `.claude/`. They look like a reviewer-session artifact. Fix: remove both files from the branch diff, for example by restoring them to their `feat/layer` state (git does not track them there if they are new).
-2. DoD 1 (`bash -n scripts/bb/lib.sh`) is unverified. The sandbox denied the command in this session ("don't ask" mode).
-3. DoD 2 (`/bin/bash scripts/bb/tests/lib_test.sh`, last line `PASS`) is unverified for the same reason. The developer and reviewer also could not run it under `/bin/bash` explicitly. Whoever runs it next needs Bash permission for these two commands.
-4. DoD 5 passes: `grep -c -E "^set -" scripts/bb/lib.sh` printed `0`.
-5. `scripts/agents/test.sh lint` passed. `npm run lint` was skipped because there is no engine/. layer_lint reported 5 files, 29 production lines, 0 fail, 0 warn.
-6. Build type is `none`, so no build was run. `tests:` is empty.
+1. DoD 1: `bash -n scripts/bb/lib.sh` → exit 0, no output.
+2. DoD 2: `/bin/bash scripts/bb/tests/lib_test.sh` → `PASS`.
+3. DoD 3 and 4: read lib_test.sh. Assertions a–g are each separate with a failure message. The test writes only under `mktemp -d` and removes it via trap. The default-BB_LOG_DIR check (e) runs in a subshell and only compares strings.
+4. DoD 5: `grep -c -E "^set -" scripts/bb/lib.sh` → `0`.
+5. DoD 6: `scripts/agents/diff.sh tasks/0002-bb-lib-step.md --names` → only scripts/bb/lib.sh and scripts/bb/tests/lib_test.sh.
+6. `scripts/agents/test.sh lint`: `npm run lint` skipped (no engine/); layer_lint 5 files, 29 production lines, 0 fail, 0 warn.
+7. Build `none` and `tests:` empty, so no build or mochitests were run.
