@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0008-bb-smoke-sh
 depends_on: [0002]
@@ -23,7 +23,7 @@ returns: 1
 sessions: 0
 reviewed_sha: e940ab86467492f796dacc6d45c4b124f2118299
 qa_sha: e940ab86467492f796dacc6d45c4b124f2118299
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Create `scripts/bb/smoke.sh <Y>` (ADR-0002 Решение 4, step 10 and "Smoke-чеклист v1"): it copies the working profile to

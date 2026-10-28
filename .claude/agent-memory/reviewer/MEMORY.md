@@ -2,4 +2,5 @@
 - [Preprocessed headers](feedback_preprocessed_headers.md) — .inc.xhtml/.manifest includes need `# ` comments, not `<!-- -->`
 - [Shell strict mode](feedback_shell_strict_mode.md) — bb scripts ship `set -u` only; check -euo pipefail, empty git vars, TMPDIR
 - [Rebase hook](feedback_rebase_hook.md) — commands naming rebase.sh are blocked for reviewer; check --continue check order
+- [Background procs](feedback_background_procs.md) — `cmd &` under step's tee must redirect fds; hook blocks "smoke"/"rebase" cmds
 - [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths
