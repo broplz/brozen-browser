@@ -1,3 +1,4 @@
 - [Re-run DoD greps](feedback_rerun_dod.md) — developers skip cheap DoD checks; run them yourself in turn 1
 - [Preprocessed headers](feedback_preprocessed_headers.md) — .inc.xhtml/.manifest includes need `# ` comments, not `<!-- -->`
+- [Shell strict mode](feedback_shell_strict_mode.md) — bb scripts ship `set -u` only; check -euo pipefail, empty git vars, TMPDIR
 - [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths

@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0005-bb-patches-sh
 depends_on: [0002]
@@ -22,7 +22,7 @@ returns: 1
 sessions: 0
 reviewed_sha: b3e8d9fbd989a5f36ffd0d5650a520f6fe4b0d6e
 qa_sha: b3e8d9fbd989a5f36ffd0d5650a520f6fe4b0d6e
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Create `scripts/bb/patches.sh`, the BB patch tool from the last paragraph of ADR-0002 Решение 2. It is
