@@ -67,6 +67,9 @@ and report.sh can later read step timings from the log.
   `#!/usr/bin/env bash` and sources `scripts/bb/lib.sh` by path relative to itself.
 - Out of scope: `caffeinate`, git `--progress`, colors, rebase logic — later tasks (0007).
 - Nothing else in lib.sh yet; no helpers "for later".
+- Unblock 2026-10-28: escalated, not split or re-spec'd. The code is approved and the only
+  blockers are outside an agent's reach: the reviewer-committed `.claude/agent-memory/` files
+  in the diff, and the denied Bash commands for DoD 1–2. See docs/reports/decisions-needed.md.
 
 ## Handoff
 Done: lib.sh and lib_test.sh are complete and unchanged (review APPROVE; QA items 4–6 pass).
