@@ -6,7 +6,7 @@ prefix: layer
 kind: feature
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0003-bb-skeleton
 depends_on: [0001]
@@ -26,7 +26,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 783ec8ef4d8b324e209c248e8a1c79ab901545b9
 qa_sha: 783ec8ef4d8b324e209c248e8a1c79ab901545b9
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Create the BB layer's build entry files in `src/bb/` and the first BB pref, per ADR-0002
