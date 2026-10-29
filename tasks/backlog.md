@@ -37,3 +37,6 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - env pins: Node must be 22 (`.nvmrc`); Node 25 breaks surfer import (async-icns rmdir recursive). gnu-tar required on macOS
 - triage_log.py: false "error" on `Notification center failed: Install terminal-notifier`
 - Browser Console: `Key element … missing "key"/"keycode"` warnings for Zen shortcuts (ShortcutUtils) — check if upstream Zen or l10n
+- rebase.sh: do_build hardcodes --jobs 6 — use BB_JOBS
+- rebase.sh: define --continue behaviour after a failed publish (finalize commit already on rebase/<tag>)
+- settings.json allow: add `Bash(grep *)`; check why `Bash(bash -n *)` still gets denied (see night log 2026-10-29)
