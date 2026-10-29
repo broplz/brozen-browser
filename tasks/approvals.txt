@@ -3,3 +3,4 @@
 # when its id is listed here. Check the branch first: scripts/agents/diff.sh tasks/<id>-*.md
 0013 approved
 0006 approved
+0011 approved
