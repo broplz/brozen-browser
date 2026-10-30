@@ -16,7 +16,7 @@ ERROR_RE = re.compile(
     r"Command failed|exited with code [1-9]|No such file or directory|Permission denied|"
     r"Unhandled rejection|\[ERROR\]|\berror\b\s+\w+:\s)", re.I)
 IGNORE_RE = re.compile(r"(-Werror|error-prone|errors?=|0 errors|no errors|error_code|\.error\b|ErrorResult|"
-                       r"warning: .*error|RESULT: OK|BUILD RESULT|tests? passed)", re.I)
+                       r"warning: .*error|RESULT: OK|BUILD RESULT|tests? passed|Notification center failed)", re.I)
 WARN_RE = re.compile(r"\bwarning(\[\w+\])?:", re.I)
 OURS_RE = re.compile(r"(^|/)(bb|zen)/|src/bb/|prefs/bb/|scripts/bb/")
 LOC_RE = re.compile(r"((?:[\w./-]+)\.(?:cpp|cc|mm|m|h|hpp|idl|rs|js|mjs|sys\.mjs|jsm|css|py|sh|yaml|yml|toml|patch)(?::\d+)+)")
