@@ -2,178 +2,155 @@
 
 ## Статус
 
-Proposed — черновик 30.10.2026, решения владельца по Q1–Q3 внесены (раздел «Решения владельца»). После шага 0 (инвентаризация) и подтверждения механизмов статус меняется на Accepted, файл уходит в `docs/adr/0003-strip-ai-telemetry-sync-eme-mods.md`, декомпозиция — через teamlead в `tasks/`.
+Accepted — 31.10.2026. Версия 2: учтён отчёт инвентаризации `docs/reports/strip-inventory.md` (задача 0024) и решения владельца. Проверка решений — задачи 0025–0028; при провале проверок ADR возвращается в Proposed с пометкой, что именно не подтвердилось.
 
 - Область: репо `broplz/brozen-browser`, база Zen 1.23.4b / Firefox 158.0.1, слой по ADR-0002, эпик `e1-strip`.
-- Основание: `configs/common/mozconfig` и `configs/macos/mozconfig` Zen на теге 1.23.4b (прочитаны), документация Firefox по telemetry defines и `--enable-eme`, Bugzilla 1434706 (`identity.fxaccounts.enabled`), SUMO-тред по `browser.ml.*`, структура `patches/` (в т.ч. `pref-pane/`) и `settings/` LibreWolf. Что не удалось проверить из чата — помечено и вынесено в задачу инвентаризации (Решение 3, шаг 0).
-- Связанные ADR: ADR-0002 (место в слое: `configs/bb/mozconfig`, `prefs/bb/strip.yaml`, `src/bb/strip/`), ADR-0004 (prefs безопасности и скорости — не здесь), E0 (бренд, апдейтер — задачи 0021–0023).
+- Основание: отчёт 0024 (каждое утверждение — с `file:line` в исходниках Zen/Firefox), `configs/common/mozconfig` и `configs/macos/mozconfig` Zen 1.23.4b, документация Firefox по telemetry defines, Bugzilla 1434706, tor-browser#42501, SUMO-тред по `browser.ml.*`, LibreWolf `patches/pref-pane/`.
+- Связанные ADR: ADR-0002 (слой; это ADR ужесточает его правило для e1-strip), ADR-0004 (prefs приватности/скорости — не здесь), E0 (бренд, апдейтер — 0021–0023).
 
-Теги утверждений: **[verified]** — прочитано в исходнике или официальной документации; **[не нашёл подтверждения]** — предположение, проверяется шагом 0; **[my judgment]** — оценка автора.
+Теги: **[verified]** — исходник или официальная документация; **[my judgment]** — оценка; **[open]** — проверяется задачей, указан номер.
 
 ## Контекст и проблема
 
-Хотелка из скоупа v1: BB не содержит AI-функций Firefox, не шлёт телеметрию, не предлагает Sync, не тянет Widevine, не показывает Zen Mods. Решение владельца (30.10.2026) уточняет принцип: **ничего не вырезается намертво — у каждого пункта есть выключатель, и пользователь сам решает, что включить**; переключатели собраны в отдельной вкладке настроек BB. Вопрос ADR — каким механизмом каждое выключается по умолчанию, как пользователь это включает обратно, и как это переживает еженедельные ребейзы.
+Хотелка скоупа v1: BB без AI Firefox, телеметрии, Sync, Widevine и Zen Mods. Решения владельца (30–31.10.2026):
 
-Что уже сделано за нас:
+1. Ничего не вырезается намертво — у каждого пункта есть выключатель, пользователь сам решает, что включить. Без замков на префы.
+2. Переключатели — в отдельной вкладке настроек BB.
+3. EME выключен по умолчанию, из сборки не вырезается. Mods выключены по умолчанию. Boosts включены, но с выключателем.
+4. **Чисто**: файлы Zen и Firefox не правим — каждая такая правка это merge-конфликт на еженедельном теге. Всё живёт в `src/bb/`, `prefs/bb/`, `scripts/bb/`; наши изменения ставятся поверх Zen, а не внутрь него.
 
-- Zen собирается с `MOZ_DATA_REPORTING=`, `MOZ_SERVICES_HEALTHREPORT=`, `MOZ_TELEMETRY_REPORTING=` (и `mk_add_options`, и `ac_add_options`) в `configs/common/mozconfig`; в release-режиме ещё `--disable-crashreporter` **[verified]**. Телеметрия на уровне сборки уже выключена.
-- Zen не кладёт API-ключи Mozilla/Google в сборку без файлов `~/.zen-keys/*.dat` **[verified]** — у нас их нет.
-- Апдейтер отключён задачей 0022 (E0).
+Что уже сделал Zen (отчёт 0024, **[verified]**):
 
-Что Zen **включает** и BB выключает по умолчанию:
-
-- `configs/macos/mozconfig`: `ac_add_options --enable-eme=widevine` **[verified]**.
-- Zen Mods — каталог `src/zen/mods/` **[verified, из tree в ADR-0002]**; как подключается (pref, `ZenPreloadedScripts.js`, `ZenComponents.manifest`) — **[не нашёл подтверждения]**.
-- Zen Sync — каталог `src/zen/sync/` **[verified]**; надстройка над Firefox Sync/FxA, что именно делает — **[не нашёл подтверждения]**.
-- AI Firefox (`browser.ml.*`): Zen дефолтов не меняет **[не нашёл подтверждения — проверить `prefs/zen/*.yaml` grep'ом]**.
-
-Что остаётся включённым, но получает выключатель: Zen Boosts (`src/zen/boosts/`) **[verified каталог]**.
-
-Ограничения из ADR-0002: прямая правка файлов Zen — только хук ≤ ~10 строк с маркером `// BB(e1)` и записью в `layer.yaml`; удаление каталогов Zen патчем — самая дорогая форма; каждый компонент выключается pref'ом до стокового Zen (F2). Для этого ADR F2 работает в обе стороны: `bb.strip.<x>=false` возвращает стоковый Zen.
-
-Порядок сборки mozconfig в surfer: `configs/common/mozconfig` → `configs/<os>/mozconfig` → корневой `mozconfig` **[verified, ADR-0002 п.5]**. Хук BB стоит в `configs/common/mozconfig` — флаги BB читаются **до** `--enable-eme=widevine`.
+- **AI**: `prefs/firefox/ai.yaml` ставит в `false` семь `browser.ml.*` (`chat.enabled`, `chat.shortcuts`, `chat.shortcuts.custom`, `chat.sidebar`, `chat.menu`, `linkPreview.enabled`, и Zen-собственный мастер `browser.ml.enable`). Не закрыты: `browser.ml.chat.page`, `chat.page.footerBadge`, `chat.page.menuBadge`, `chat.shortcuts.smartwindow`, `linkPreview.optin`, `browser.tabs.groups.smart.enabled/userEnabled/optin/searchTopicEnabled`, `browser.search.visualSearch.featureGate`, `extensions.ml.enabled` (`all.js:1784`, true).
+- **Телеметрия**: `prefs/privatefox/privacy.yaml` — `datareporting.policy.dataSubmissionEnabled`, `healthreport.uploadEnabled`, `toolkit.telemetry.*` (9 имён), `app.shield.optoutstudies.enabled`, `app.normandy.*`, `browser.ping-centre.telemetry` — `false`, большинство `locked`. Не закрыт `browser.discovery.enabled` (ff.js:3082, true). В mozconfig Zen обнуляет `MOZ_DATA_REPORTING`, `MOZ_SERVICES_HEALTHREPORT`, `MOZ_TELEMETRY_REPORTING`, но в текущем objdir `MOZ_DATA_REPORTING=1`, `MOZ_SERVICES_HEALTHREPORT=1` (`config.status:96-97`) — либо objdir старее этих строк, либо форма `ac_add_options X=` не снимает subst **[open, 0025]**.
+- **Sync**: `src/zen/sync/` — Sync-engine для Spaces поверх Firefox Sync, без UI; без FxA мёртв. `identity.fxaccounts.enabled=true` — дефолт Firefox (ff.js:2481), Zen не трогает.
+- **EME**: `configs/macos/mozconfig:8` `--enable-eme=widevine`; `prefs/zen/media.yaml:5` `media.eme.enabled=true`; `media.gmp-widevinecdm.enabled/visible` и `browser.eme.ui.enabled` — дефолты Firefox под `MOZ_WIDEVINE_EME`.
+- **Mods**: pref'а-выключателя нет (`zen.mods.*` — только автообновление); модуль грузится строкой 21 `ZenPreloadedScripts.js`, инстанс `window.gZenMods`; вкладка Marketplace — в патче Zen на `preferences.xhtml`.
+- **Boosts**: `zen.boosts.enabled` (`prefs/zen/boosts.yaml:5`, true); гейтит регистрацию actor'а и urlbar-действие; панель site-data и секция Library — не гейтят.
+- **Панель настроек**: Zen добавляет вкладки патчами на `preferences.xhtml`/`preferences.js`/`jar.mn` плюс плоские файлы `zen-settings.js`, `zen*.inc.xhtml`.
+- **Линт**: `layer_lint.py:127-130` отвергает не-`bb.*` имена в `prefs/bb/`.
 
 ## Требования
 
-- S1. Каждый пункт имеет один механизм, одну запись в `layer.yaml` или `prefs/bb/strip.yaml`, один автоматический тест.
-- S2. Ничего не удаляется из дерева Zen патчем, если то же достигается pref'ом или хуком в одну строку.
-- S3. **Без замков.** Ни один pref этого ADR не блокируется (`lockPref`, `policies.json`): дефолт BB — выключено, решение о включении — за пользователем. Исключение — телеметрия и data reporting: они выключены на уровне сборки Zen, включать их нечем, и переключатель для них не делается.
-- S4. Проверка — скриптом, без человека: `scripts/bb/strip-check.sh` сверяет build-defines и сгенерированные prefs с `strip.yaml`, падает на первом расхождении.
-- S5. Не ломаем то, что оставляем: Safe Browsing, Remote Settings (сертификаты, блок-листы), OpenH264 GMP, Boosts.
-- S6. **Все переключатели в одном месте**: категория «BROzen» в `about:preferences` с тумблерами для каждого пункта (EME, AI, Sync, Mods, Boosts), привязанными к `bb.strip.*`. Переключение не требует пересборки; где Firefox требует перезапуск (EME, FxA) — панель об этом пишет.
+- S1. Каждый пункт: один механизм, одна запись (`strip.yaml` или `layer.yaml`), один автоматический тест.
+- S2. **Ноль правок файлов Zen и Firefox** в e1-strip. Исключение — только с явным одобрением владельца, отдельной задачей с `needs_approval`.
+- S3. Без замков. Дефолт BB — выключено; решение о включении — за пользователем. Телеметрия — без переключателя: она закрыта Zen'ом с замками, включать нечем.
+- S4. Проверка скриптом: `scripts/bb/strip-check.sh` падает на первом расхождении.
+- S5. Не ломаем: Safe Browsing, Remote Settings, OpenH264 GMP, Boosts, `zen.window-sync.*`.
+- S6. Все переключатели в одном месте: вкладка «BROzen» в `about:preferences`, пять тумблеров (EME, AI, Sync, Mods, Boosts) с пометкой «нужен перезапуск», где требуется.
 
-## Решение 1 — три уровня и правило выбора
+## Решение 1 — уровни и правило выбора
 
-| Уровень | Что это | Когда применять | Цена при ребейзе |
+| Уровень | Что это | Когда | Цена при ребейзе |
 |---|---|---|---|
-| L1 build | `ac_add_options --disable-*`, `MOZ_*=` в `configs/bb/mozconfig*` | Код не должен попасть в бинарь (крэш-репортер). **Несовместимо с S6** — пользователь включить не сможет, поэтому только для телеметрии/крэшей | Ноль: файл наш |
-| L2 prefs | `prefs/bb/strip.yaml` → `zen.js`/`zen-static-prefs.inc` | Фича управляется pref'ом и Firefox сам прячет UI при `false` | Ноль; риск — переименование pref'а в новом Firefox, ловит strip-check |
-| L3 hook | Хук ≤10 строк в файле Zen за pref'ом `bb.strip.<x>`, или CSS `display:none` в `src/bb/strip/strip.css` | Компонент Zen без собственного pref'а | Низкая: merge одной строки, `rerere` |
-| L4 patch | `src/bb/patches/e1-strip/<имя>/` с README | Только если L1–L3 невозможны | Высокая; каждый случай — одобрение владельца |
+| L2 prefs | `prefs/bb/strip.yaml` | Фича управляется pref'ом | ноль; переименование pref'а в новом Firefox ловит strip-check |
+| L3 own-code | Подмена инстанса или инъекция из `src/bb/` (BBStartup грузится последним; свои actor'ы в `BBComponents.manifest`), CSS в `src/bb/strip/strip.css` | Компонент Zen без pref'а, UI-входы | ноль файловых; риск — смена внутреннего API/DOM Zen или Firefox, ловит smoke |
+| L1 build | флаги в `configs/bb/mozconfig*` | Только без переключателя (крэш-репортер) | ноль |
+| L4 edit/patch | правка файла Zen или патч на Firefox | **Запрещено** по S2 без одобрения | каждый тег |
 
-Правило: сначала L2, потом L3, L4 — исключение; L1 — только там, где переключатель не нужен по S3. Все L2 — в одном `prefs/bb/strip.yaml`, секции по компонентам; все L3 — в `layer.yaml: edits` с `epic: e1-strip`. Пользовательские переключатели — namespace `bb.strip.*`: `BBStartup.mjs`/панель настроек транслируют их в конкретные pref'ы Firefox/Zen (`bb.strip.eme=true` → `media.eme.enabled=false` и т.д.), чтобы панель не зависела от имён внутренних pref'ов, которые Mozilla переименовывает.
+Правило: L2 → L3 → стоп. L1 только для 2.1. Namespace тумблеров — `bb.strip.*` с дефолтами в `strip.yaml`; `src/bb/strip/BBStrip.mjs` транслирует тумблер во внутренние префы (таблица в 2.7) при переключении и приводит их в соответствие на старте. Дефолты внутренних префов живут в yaml, не в JS.
+
+**Размещение префов (Q8 отчёта).** Правило ADR-0002 «чужие имена не в `prefs/bb/`» защищает от дубля с yaml Zen (недетерминированная сортировка ffprefs). Для e1-strip оно сужается: `layer_lint.py` разрешает не-`bb.*` имя в `prefs/bb/strip.yaml`, **если это имя не встречается ни в одном `prefs/{zen,firefox,fastfox,privatefox}/**/*.yaml`**; иначе — ошибка линта с текстом «Zen задаёт этот pref: не дублировать». Так в `strip.yaml` попадают только Firefox-only имена (≈13), дубля быть не может, Zen не трогается. Отдельная задача на линт идёт до 0025.
 
 ## Решение 2 — по компонентам
 
-### 2.1 Телеметрия и data reporting — без переключателя
+### 2.1 Телеметрия — без переключателя
 
-| Вариант | Суть | Вердикт |
+Zen закрыл её префами с замками **[verified]**. BB добавляет в `strip.yaml` только `browser.discovery.enabled=false` (Firefox-only). `configs/bb/mozconfig`: `ac_add_options --disable-crashreporter` безусловно — у Zen он только под `ZEN_RELEASE` **[verified]**, в dev-сборке `MOZ_CRASHREPORTER=1`.
+
+Открытое **[open, 0025]**: `MOZ_DATA_REPORTING=1` в objdir. QA 0025 делает свежую сборку и смотрит `config.status`. Если флаги остались `1` — добавляем в `configs/bb/mozconfig` форму, которая работает (`export MOZ_DATA_REPORTING=` / `mk_add_options`), и фиксируем в отчёте 0025, какая. Это не правка Zen: наш файл. Утечки нет и сейчас — префы отправки заперты Zen'ом.
+
+Из списка v1 убраны: `dom.private-attribution.submission.enabled` — в Firefox 158 не найден **[verified, 0024]**.
+
+### 2.2 AI — `bb.strip.ai`, по умолчанию выкл.
+
+L2. Zen уже выключил семь имён; `strip.yaml` добавляет Firefox-only: `browser.ml.chat.page=false`, `chat.page.footerBadge=false`, `chat.page.menuBadge=false`, `chat.shortcuts.smartwindow=false`, `linkPreview.optin=false`, `browser.ml.pageAssist.enabled=false` (уже false, фиксируем), `browser.tabs.groups.smart.enabled=false`, `.userEnabled=false`, `.optin=false`, `.searchTopicEnabled=false`, `browser.search.visualSearch.featureGate=false`, `extensions.ml.enabled=false`. Убраны несуществующие `hideFromLabs`, `hideLabsShortcuts` **[verified, 0024]**.
+
+Тумблер «AI» в `true` включает и семь имён Zen, и наши — через `BBStrip.mjs` как user-префы при переключении. Без замков; защита от «Mozilla включила новое по умолчанию» — drift-часть strip-check (2.9).
+
+### 2.3 Sync — `bb.strip.sync`, по умолчанию выкл.
+
+L2: `identity.fxaccounts.enabled=false` прячет панель Sync и отключает FxA **[verified, Bugzilla 1434706]**; требует перезапуска — панель предупреждает. Zen Spaces Sync — engine поверх FxA, без аккаунта не работает **[verified, 0024 Q3]**; хук не нужен. `auth.uri`/`tokenserver.uri` не трогаем — пользователь включает Sync одним тумблером.
+
+### 2.4 EME — `bb.strip.eme`, по умолчанию выкл.
+
+L2, три префа Firefox-only: `media.gmp-widevinecdm.enabled=false`, `media.gmp-widevinecdm.visible=false`, `browser.eme.ui.enabled=false` **[verified, tor-browser#42501: их выставляет `--enable-eme`]**. Строку Zen `media.eme.enabled=true` **не трогаем**: это включение API EME, без CDM DRM-контент не играет **[my judgment; проверка — smoke 0028: Netflix не играет по умолчанию, играет после тумблера и перезапуска]**. Если smoke покажет обратное — `media.eme.enabled` добавляется в таблицу трансляции как user-pref, выставляемый `BBStrip.mjs`; Zen по-прежнему не правим.
+
+### 2.5 Zen Mods — `bb.strip.mods`, по умолчанию выкл.
+
+L3 без правки Zen: `BBStartup.mjs` грузится последним в том же окне, модуль Zen импортирован с `{global:"current"}` **[verified, 0024 Q1]** — за `bb.strip.mods=true` BBStartup заменяет `window.gZenMods` на заглушку с тем же интерфейсом (методы no-op), до того как её дёрнут actor'ы Marketplace и `zen-settings.js`. Вкладка Marketplace прячется CSS: `#category-zen-marketplace{display:none}` в `strip.css`. Запасной путь (хук-фильтр в `ZenPreloadedScripts.js`, ~5 строк Zen) — только с одобрением владельца, если заглушка не держит.
+
+### 2.6 Zen Boosts — `bb.strip.boosts`, по умолчанию **вкл.**
+
+L2: `bb.strip.boosts=true` ⇄ `zen.boosts.enabled=false` (pref Zen, трансляция в `BBStrip.mjs` как user-pref; в `strip.yaml` его нет — он Zen-овский). Не гейтятся Zen'ом кнопка в site-data панели и секция Library **[verified, 0024 Q2]** — CSS в `strip.css` под атрибутом `bb-strip-boosts` на `#main-window`, который ставит `BBStrip.mjs`.
+
+### 2.7 Панель «BROzen» — инъекция из своего кода
+
+| Вариант | Что трогаем | Конфликты | Вердикт |
+|---|---|---|---|
+| A. Свой actor (`BBComponents.manifest`, наш файл): ловит загрузку `about:preferences`, из JS добавляет `moz-page-nav-button` «BROzen» и тело панели (`src/bb/strip/brozen-pane.js`, `.css`, `.ftl` через `jar.inc.mn`) | только `src/bb/` | ноль файловых; риск — смена DOM `preferences.xhtml` в новом Firefox, ловит smoke | **Рекомендован** [my judgment; доказывает 0028] |
+| B. `about:brozen` — своя страница | только `src/bb/` | ноль | Запасной: вкладки в настройках нет |
+| C. BB-патч на `preferences.xhtml`/`.js` | файлы Firefox рядом с хенками Zen | при смене Firefox и сдвиге хенков Zen | Отвергнут (S2) |
+| D. Хук в `zen-settings.js` | файл Zen | каждый тег | Отвергнут (S2) |
+
+Содержимое v1: пять тумблеров, строка пояснения, пометка «перезапуск» у EME и Sync, кнопка «Перезапустить».
+
+Таблица трансляции (`BBStrip.mjs`, единственный источник):
+
+| Тумблер | Дефолт | Внутренние префы при тумблере = «выключено» |
 |---|---|---|
-| A. Ничего, Zen уже выключил | полагаться на `MOZ_*=` Zen | Недостаточно: не проверяется, `datareporting.*` остаются дефолтными |
-| B. Дублировать флаги в `configs/bb/mozconfig` | те же `MOZ_*=` | Отвергнут: ADR-0002 запрещает дублировать флаги Zen |
-| C. **Prefs-подстраховка + strip-check** | L2: `datareporting.policy.dataSubmissionEnabled=false` (главный выключатель отправки **[verified, Firefox docs]**), `datareporting.healthreport.uploadEnabled=false`, `toolkit.telemetry.unified=false`, `toolkit.telemetry.enabled=false`, `toolkit.telemetry.server=""`, `toolkit.telemetry.archive.enabled=false`, `toolkit.telemetry.*Ping.enabled=false`, `browser.ping-centre.telemetry=false`, `app.shield.optoutstudies.enabled=false`, `app.normandy.enabled=false`, `app.normandy.api_url=""`, `browser.discovery.enabled=false`, `dom.private-attribution.submission.enabled=false`; strip-check проверяет и build-defines Zen, и эти pref'ы | **Рекомендован** |
+| `bb.strip.ai` | true | все `browser.ml.*`, `browser.tabs.groups.smart.*`, `browser.search.visualSearch.featureGate`, `extensions.ml.enabled` → false |
+| `bb.strip.sync` | true | `identity.fxaccounts.enabled` → false |
+| `bb.strip.eme` | true | `media.gmp-widevinecdm.enabled`, `.visible`, `browser.eme.ui.enabled` → false |
+| `bb.strip.mods` | true | заглушка `gZenMods`, CSS |
+| `bb.strip.boosts` | false | `zen.boosts.enabled` → false, CSS |
 
-Крэш-репортер: в dev-сборке (`ZEN_RELEASE` не задан) `--disable-crashreporter` Zen не действует **[verified]**. L1 в `configs/bb/mozconfig`: `ac_add_options --disable-crashreporter` безусловно — расширение на dev-режим, не дубль. Проверка: `MOZ_CRASHREPORTER` отсутствует в `config.status`.
+### 2.8 Не трогаем
 
-### 2.2 AI (Firefox `browser.ml.*`) — переключатель `bb.strip.ai`, по умолчанию выключен
+Safe Browsing, Remote Settings, OpenH264 GMP, `app.update.*` (0022), `zen.window-sync.*`, `services.sync.prefs.sync.zen.*` (мертвы без FxA). Prefs приватности сверх этого — ADR-0004.
 
-Build-флага для `browser.ml` в `moz.configure` нет **[не нашёл подтверждения — шаг 0]**. Механизм — L2.
+### 2.9 Проверка
 
-Pref'ы (SUMO-тред Mozilla и блоги 2025–2026 **[verified как список; актуальность на Firefox 158 — шаг 0]**): `browser.ml.enable=false` (мастер), `browser.ml.chat.enabled=false`, `browser.ml.chat.sidebar=false`, `browser.ml.chat.shortcuts=false`, `browser.ml.chat.shortcuts.custom=false`, `browser.ml.chat.page=false`, `browser.ml.chat.page.footerBadge=false`, `browser.ml.chat.page.menuBadge=false`, `browser.ml.chat.menu=false`, `browser.ml.chat.hideFromLabs=true`, `browser.ml.chat.hideLabsShortcuts=true`, `browser.ml.linkPreview.enabled=false`, `browser.ml.pageAssist.enabled=false`, `browser.tabs.groups.smart.enabled=false`, `browser.tabs.groups.smart.userEnabled=false`, `extensions.ml.enabled=false`, `browser.search.visualSearch.featureGate=false`.
+`scripts/bb/strip-check.sh`, три части:
 
-Без замков (S3). Риск: Mozilla включала `browser.ml.*` поэтапно через обновления **[verified, SUMO]** — после ребейза новый pref может появиться с `true`. Митигация — не замок, а strip-check: он сравнивает список `browser.ml.*` в `engine/browser/app/profile/firefox.js` нового Firefox с `strip.yaml` и падает на незнакомом имени; задача на обновление `strip.yaml` ставится агентом.
+- **build**: `engine/obj-*/config.status` (формат `'KEY': 'value'` **[verified, 0024 Q9]**) — `MOZ_CRASHREPORTER` отсутствует; `MOZ_DATA_REPORTING`, `MOZ_SERVICES_HEALTHREPORT` отсутствуют (после разбора **[open, 0025]**).
+- **prefs**: сгенерированный `engine/browser/app/profile/zen.js` (`pref("name", value[, locked]);`, с `#if`-блоками **[verified]**) против `prefs/bb/strip.yaml` построчно.
+- **drift**: все `browser.ml.*`, `browser.tabs.groups.smart.*`, `identity.fxaccounts.*`, `media.gmp-widevinecdm.*`, `browser.eme.*` из `firefox.js` нового engine должны быть известны `strip.yaml`, yaml Zen или allow-листу `scripts/bb/strip-allow.txt`; незнакомое имя — код 1 и задача на обновление.
 
-UI-остатки («Ask AI» в меню, шорткаты в Labs) при `browser.ml.enable=false` Firefox прячет сам **[my judgment по SUMO; проверяется smoke]**; иначе — CSS в `strip.css`.
-
-### 2.3 Sync и Firefox Accounts — переключатель `bb.strip.sync`, по умолчанию выключен
-
-L2: `identity.fxaccounts.enabled=false` — один pref прячет панель Sync и отключает FxA/Sync **[verified, Bugzilla 1434706; test browser_sync_disabled.js]**. Требует перезапуска **[verified, обсуждение в баге]** — панель BB предупреждает. `auth.uri`/`tokenserver.uri` не обнуляем: пользователь должен мочь включить Sync одним тумблером.
-
-Zen Sync (`src/zen/sync/`): если это Sync-engines поверх FxA — при выключенном FxA мёртв, трогать не надо; если рисует UI или грузится безусловно — L3-хук за тем же `bb.strip.sync`. Решается шагом 0 **[не нашёл подтверждения]**.
-
-Не путать с `zen.window-sync.enabled` (синхронизация вкладок между окнами) — не Sync, не трогаем.
-
-### 2.4 EME / Widevine — переключатель `bb.strip.eme`, по умолчанию выключен
-
-Решение владельца (Q1): выключено по умолчанию, включается пользователем. Это исключает L1 `--disable-eme` и правку `--enable-eme=widevine` у Zen.
-
-L2: `media.eme.enabled=false`, `media.gmp-widevinecdm.enabled=false`, `media.gmp-widevinecdm.visible=false`, `browser.eme.ui.enabled=false` **[verified, tor-browser#42501: именно эти pref'ы выставляет `--enable-eme`]**. При `visible=false` в настройках нет пункта «Play DRM content» — пользователь включает через тумблер BB, который возвращает все четыре в `true`; CDM скачается при первом воспроизведении (штатное поведение Firefox). Smoke: Netflix не играет по умолчанию; после тумблера и перезапуска — играет.
-
-### 2.5 Zen Mods — переключатель `bb.strip.mods`, по умолчанию выключен
-
-Шаг 0 устанавливает: есть ли pref вроде `zen.mods.enabled` и как `src/zen/mods/` попадает в `ZenPreloadedScripts.js`/`ZenComponents.manifest` **[не нашёл подтверждения]**. Далее по правилу Решения 1:
-
-1. Pref есть → L2 + CSS для входа в Settings, если Zen его не прячет сам.
-2. Pref'а нет → L3: хук в `ZenPreloadedScripts.js` — пропуск модуля `mods` за `bb.strip.mods`; запись `layer.yaml: edits`. ≤10 строк, если скрипты перечислены массивом **[my judgment]**. Запасной путь (R2) — подмена инстанса `gZenMods*` из `BBStartup.mjs` (ADR-0002, Решение 2 п.2).
-3. Удаление каталога (L4) — не делаем.
-
-Остатки: ссылка на Mods store, `zen.mods.*` в about:preferences — smoke-пункт; при необходимости `strip.css`.
-
-### 2.6 Zen Boosts — переключатель `bb.strip.boosts`, по умолчанию **включён** (Boosts работают)
-
-Решение владельца (Q3): Boosts остаются, но с выключателем. Механизм тот же, что для Mods (шаг 0 ищет pref `zen.boosts.*`; иначе L3-хук за `bb.strip.boosts`). Отличие только в дефолте.
-
-### 2.7 Панель переключателей — категория «BROzen» в `about:preferences`
-
-| Вариант | Суть | Плюсы | Минусы | Вердикт |
-|---|---|---|---|---|
-| A. Своя категория в `about:preferences` | как LibreWolf (`patches/pref-pane/`, категория с иконкой **[verified: каталог и `category-librewolf.svg` в репо]**) и как сам Zen делает для своих страниц настроек **[не нашёл подтверждения механизма — шаг 0: `grep -rn "zen-settings\|category-zen" src/zen src/browser`]** | Родное место, привычно пользователю Firefox/Zen | Если Zen вшивает свои страницы патчем на `preferences.xhtml` — наш вход туда либо хук в его файле (класс 2/3), либо отдельный патч | **Рекомендован**, механизм — по шагу 0 |
-| B. Отдельная `about:brozen` | своя страница с тумблерами | Ноль пересечений с Zen | Пользователь не найдёт; две точки настроек | Запасной |
-| C. Только about:config | ничего не делать | Ноль работы | Не соответствует решению владельца | Отвергнут |
-
-Содержимое панели v1: пять тумблеров (EME, AI, Sync, Mods, Boosts) с одной строкой пояснения и пометкой «нужен перезапуск» где требуется; кнопка «Перезапустить». Логика — `src/bb/strip/BBStrip.mjs`: слушает `bb.strip.*`, транслирует в pref'ы Firefox/Zen из таблицы выше, при старте приводит внутренние pref'ы в соответствие с `bb.strip.*` (чтобы обновление Firefox, вернувшее `browser.ml.enable=true`, не пережило следующий запуск BB). Панель — отдельная задача после шага 0; этот ADR фиксирует контракт: имена `bb.strip.*`, дефолты, таблица трансляции.
-
-### 2.8 Что сознательно не трогаем
-
-Safe Browsing, Remote Settings, OpenH264 GMP, `app.update.*` (E0/0022), Pocket (удалён из Firefox в 2025; остатки поймает strip-check как «неизвестные pref'ы»), `zen.window-sync.*`. Prefs приватности сверх вырезания — ADR-0004.
-
-## Решение 3 — проверка
-
-Шаг 0, **инвентаризация** (первая задача декомпозиции, роль developer, без сборки, только чтение; результат — `docs/reports/strip-inventory.md`):
-
-```
-grep -rn "browser.ml\|fxaccounts\|telemetry\|datareporting\|eme\|widevine\|mods\|boosts" prefs/zen prefs/firefox prefs/fastfox prefs/privatefox
-grep -n "mods\|boosts\|sync" src/zen/common/ZenPreloadedScripts.js src/zen/ZenComponents.manifest src/zen/moz.build
-ls src/zen/mods src/zen/boosts src/zen/sync
-grep -rn "zen-settings\|category-zen\|preferences.xhtml" src/zen src/browser | head -30
-grep -rn "browser.ml" engine/browser/app/profile/firefox.js | head
-```
-
-Закрывает все **[не нашёл подтверждения]** и определяет для 2.2, 2.3, 2.5, 2.6, 2.7 уровень и механизм. Без него задачи на изменения не ставятся.
-
-`scripts/bb/strip-check.sh` (S4), три части:
-
-- build: `engine/obj-*/config.status` (или `mozinfo.json`) — отсутствие `MOZ_TELEMETRY_REPORTING`, `MOZ_DATA_REPORTING`, `MOZ_SERVICES_HEALTHREPORT`, `MOZ_CRASHREPORTER`.
-- prefs: сгенерированные `engine/browser/app/profile/zen.js` и `zen-static-prefs.inc` против `prefs/bb/strip.yaml` построчно.
-- drift: все `browser.ml.*`, `identity.fxaccounts.*`, `media.eme.*`, `media.gmp-widevinecdm.*` из `firefox.js` нового engine должны быть известны `strip.yaml` или явному allow-листу; незнакомое имя — код 1.
-
-Вызывается из `smoke.sh` первым шагом и из QA-роли после сборки. Smoke-чеклист (`scripts/bb/smoke.d/e1.txt`): в настройках есть категория BROzen с пятью тумблерами; Sync-панели нет; «Ask AI» нет в меню и Labs; Mods нет в настройках, Boosts есть; Netflix не играет; включить EME тумблером → перезапуск → играет; выключить обратно; Browser Console без ошибок `ml`/`fxaccounts`/`mods`/`BBStrip` первые 30 с.
+Вызов — первым шагом `smoke.sh` и из QA после сборки. Smoke `scripts/bb/smoke.d/e1.txt`: вкладка BROzen с пятью тумблерами; Sync-панели нет; «Ask AI» нет в меню; Marketplace нет, Boosts есть; Netflix не играет; тумблер EME → перезапуск → играет; обратно; Browser Console без ошибок `ml`/`fxaccounts`/`gZenMods`/`BBStrip` первые 30 с.
 
 ## Последствия
 
-Плюсы: всё переключаемое — L2/L3, ноль патчей к Firefox при ожидаемом исходе шага 0; один файл `strip.yaml` + один модуль `BBStrip.mjs` как контракт; strip-check делает список исполняемым; пользователь получает одно место для решений, а не about:config.
+Плюсы: ни одной правки файлов Zen и Firefox — ребейз e1-strip бесконфликтен по построению; один yaml и один модуль как контракт; пользователь получает одно место для решений; strip-check делает список исполняемым.
 
-Минусы и цена: панель настроек — UI-работа и вход в `about:preferences`, который у Zen может оказаться патчем (R1); L3-хуки для Mods/Boosts — merge-строка на каждом теге, где Zen меняет список скриптов; без замков дефолт `browser.ml.*` после ребейза может «уехать» до первого запуска BB — `BBStrip.mjs` приводит его в порядок на старте, strip-check ловит на сборке. Переименования pref'ов Firefox — постоянный фон, закрыт drift-проверкой.
+Цена: наши L3-механизмы (заглушка `gZenMods`, инъекция в `about:preferences`) зависят от внутреннего API Zen и DOM Firefox — не от файлов, а от поведения; ломаются тихо, поэтому smoke e1 обязателен на каждом ребейзе. Линт получает исключение — одно, узкое, с проверкой дублей. Без замков дефолт нового `browser.ml.*` после ребейза может быть `true` до первого запуска BB; drift-проверка ловит это на сборке, `BBStrip.mjs` — на старте.
 
 ## Риски и план проверки
 
-| # | Риск | Как проверяем | Митигация |
+| # | Риск | Проверка | Митигация |
 |---|---|---|---|
-| R1 | Вход в `about:preferences` у Zen — патч на `preferences.xhtml`, наш хук туда дорог | Шаг 0 | Хук в патче Zen по ADR-0002 Решение 2 п.4 или вариант B (`about:brozen`) |
-| R2 | Mods/Boosts без pref'а и без явного списка скриптов → хук >10 строк | Шаг 0 | Подмена инстансов из `BBStartup.mjs` |
-| R3 | `browser.ml.*` переименованы в Firefox 159+ | drift-часть strip-check после первого ребейза | Задача на `strip.yaml` + таблицу трансляции |
-| R4 | Zen Sync грузит UI независимо от FxA | Шаг 0 + smoke | L3-хук за `bb.strip.sync` |
-| R5 | Дубль имени pref'а в `prefs/zen` и `prefs/bb` → недетерминированный результат ffprefs | strip-check ищет дубли | Правило ADR-0002: дефолт Zen меняем правкой его строки |
-| R6 | Включение EME тумблером не подтягивает CDM без `visible=true` в момент старта | Smoke: тумблер → перезапуск → Netflix | `BBStrip.mjs` ставит все четыре pref'а и требует перезапуск |
+| R1 | Заглушка `gZenMods` не покрывает интерфейс → ошибки в actor'ах Marketplace / `zen-settings.js` | 0027, Browser Console | Расширить заглушку; крайний случай — хук в `ZenPreloadedScripts.js` с одобрением |
+| R2 | Инъекция в `about:preferences` не находит точку монтирования (DOM изменился) | 0028, smoke | Запасной `about:brozen` |
+| R3 | `media.eme.enabled=true` при выключенном CDM всё же даёт воспроизведение | smoke 0028 (Netflix) | Добавить его в трансляцию как user-pref |
+| R4 | `MOZ_DATA_REPORTING=1` в свежей сборке | QA 0025 | Рабочая форма флага в `configs/bb/mozconfig`; отчёт 0025 фиксирует причину |
+| R5 | Переименования `browser.ml.*` в Firefox 159+ | drift strip-check на первом ребейзе | Задача на `strip.yaml` + трансляцию |
+| R6 | Узкое исключение в линте пропустит дубль из-за `@cond`/include в yaml Zen | тест линта | Линт сканирует все yaml рекурсивно, включая условные значения |
 
-План: (1) шаг 0 → отчёт; (2) `strip.yaml` + `configs/bb/mozconfig` (crashreporter) + `strip-check.sh` — одна задача, QA с полной сборкой; (3) `BBStrip.mjs` + хуки Mods/Boosts по итогу шага 0; (4) панель «BROzen» в настройках — по итогу R1; (5) `smoke.d/e1.txt`; (6) ADR → Accepted после зелёного strip-check и smoke на первом ребейзе.
+План: (1) задача на линт (узкое исключение + тест); (2) 0025: `strip.yaml` (Firefox-only имена), `configs/bb/mozconfig`, `strip-check.sh`, свежая сборка, разбор R4; (3) 0026: `BBStrip.mjs` — трансляция, приведение на старте, заглушка `gZenMods`, `strip.css`; (4) 0027: панель по варианту A, при провале — B; (5) 0028: `smoke.d/e1.txt`. Нумерация задач — как заведена в `tasks/` (0025 prefs/check, 0026 BBStrip, 0027 панель, 0028 smoke); «Proposed task changes» отчёта 0024 перенумерованы иначе и не являются источником.
 
-## Решения владельца (30.10.2026)
+## Решения владельца
 
-- **Q1. EME** — выключен по умолчанию, пользователь включает сам. Из сборки не вырезаем.
-- **Q2. Замки** — не ставить. Пользователь сам решает, что включить; все переключатели — в отдельной вкладке настроек (→ S3, S6, 2.7).
-- **Q3. Boosts** — остаются включёнными, с выключателем. Вырезаем по умолчанию только Mods.
+- 30.10: EME выключен по умолчанию, включается пользователем; без замков; отдельная вкладка настроек; Boosts остаются, вырезаем по умолчанию только Mods.
+- 31.10: ноль правок файлов Zen и Firefox в e1-strip, любое исключение — отдельное одобрение; свои изменения ставятся поверх.
 
 ## Вне scope
 
-ADR-0004 (приватность/скорость: RFP, cookies, WebRTC, DoH, HTTPS-only, Betterfox-наследие Zen; `policies.json`, если когда-нибудь понадобится), uBlock Origin (E10), Mozilla-брендинг в urlbar/about-страницах (E0), Windows/Linux.
+ADR-0004 (RFP, cookies, WebRTC, DoH, HTTPS-only, Betterfox-наследие; `policies.json`), uBlock Origin (E10), Mozilla-брендинг в urlbar/about (E0), Windows/Linux.
 
 ## Ссылки
 
-- Zen 1.23.4b: `configs/common/mozconfig` (`MOZ_DATA_REPORTING=`, `MOZ_SERVICES_HEALTHREPORT=`, `MOZ_TELEMETRY_REPORTING=`, `--disable-crashreporter` под `ZEN_RELEASE`, `~/.zen-keys/*.dat`); `configs/macos/mozconfig` (`--enable-eme=widevine`).
-- Firefox: [Telemetry preferences and defines](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/internals/preferences.html) — `MOZ_TELEMETRY_REPORTING`, `MOZ_DATA_REPORTING`, `MOZ_SERVICES_HEALTHREPORT`, `datareporting.policy.dataSubmissionEnabled`.
-- [Bugzilla 1434706](https://bugzilla.mozilla.org/show_bug.cgi?id=1434706) — `identity.fxaccounts.enabled` отключает Sync и FxA, прячет UI.
-- [tor-browser#42501](https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/42501) — `--disable-eme` OS-зависим; эффект `--enable-eme` на `browser.eme.ui.enabled`, `media.gmp-widevinecdm.*`.
-- [Bugzilla 1300654](https://bugzilla.mozilla.org/show_bug.cgi?id=1300654) — история `--enable-eme`/`--disable-eme`, `MOZ_EME_MODULES`.
-- [SUMO 1542345](https://support.mozilla.org/questions/1542345) — список `browser.ml.*`, поэтапное включение Mozilla.
-- [LibreWolf source](https://codeberg.org/librewolf/source) — `patches/pref-pane/` (своя категория в настройках), `patches/sed-patches/disable-pocket.patch`, `settings/`.
+- `docs/reports/strip-inventory.md` (0024) — все `file:line` по Zen 1.23.4b и Firefox 158.
+- Zen 1.23.4b: `configs/common/mozconfig:95-100`, `configs/macos/mozconfig:8`, `prefs/firefox/ai.yaml`, `prefs/privatefox/privacy.yaml`, `prefs/zen/media.yaml:5`, `prefs/zen/boosts.yaml:5`, `src/zen/common/ZenPreloadedScripts.js:21`, `src/zen/mods/ZenMods.mjs:769`, `src/browser/components/preferences/preferences-xhtml.patch`.
+- Firefox: [Telemetry preferences and defines](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/internals/preferences.html); [Bugzilla 1434706](https://bugzilla.mozilla.org/show_bug.cgi?id=1434706) — `identity.fxaccounts.enabled`; [tor-browser#42501](https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/42501) — префы, которые выставляет `--enable-eme`.
+- [SUMO 1542345](https://support.mozilla.org/questions/1542345) — поэтапное включение `browser.ml.*` Mozilla.
+- [LibreWolf source](https://codeberg.org/librewolf/source) — `patches/pref-pane/` как референс своей вкладки (у нас — без патча).
