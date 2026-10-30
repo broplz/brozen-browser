@@ -6,7 +6,7 @@ prefix: e1
 kind: docs
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0024-strip-inventory
 depends_on: []
@@ -22,7 +22,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 8dd8a8d958044603b94957bb68cb07bc7b4a755c
 qa_sha: 8dd8a8d958044603b94957bb68cb07bc7b4a755c
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0003 Решение 3 step 0: before any strip work, read the Zen/Firefox sources and answer every claim the ADR

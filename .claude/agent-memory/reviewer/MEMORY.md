@@ -7,6 +7,7 @@
 - [Fixture vs real input](feedback_fixture_vs_real.md) — `wc -lc` real files; `while read` drops a last line without a newline
 - [Rollback paths](feedback_rollback_paths.md) — ref-moving chains: mid-chain failure leaves main moved; check exclusion rules generalize
 - [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths
+- [Multi-session docs](feedback_multisession_docs.md) — round-2 reports keep stale OPEN/session text and counts that don't add up
 
 - [BB_JOBS env](project_bb_jobs_env.md) — agents export BB_JOBS=10; old rebase tests expecting --jobs 6 fail
 - [patches.sh exec bit](project_patches_sh_exec_bit.md) — no exec bit; READMEs calling it directly fail
