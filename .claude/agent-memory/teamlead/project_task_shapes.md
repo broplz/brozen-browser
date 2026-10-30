@@ -115,6 +115,10 @@ Planning run 2026-10-30 (8th): nothing to plan. Files exist for all of 0001-0023
 Planning run 2026-10-30 (9th): nothing to plan again. Outcomes: 0015, 0016, 0018, 0019, 0020 (docs-only report),
 0023 done. 0021/0022 ready, 0012 still draft (owner sets ready).
 
+Outcome: 0012 blocked 1st session at setup. guard_bash.py:46-47 block `git -C` and `git worktree|reset|rebase` for EVERY
+role (rebaser included), so escalated. Lesson: before planning any task whose Notes contain git ref/worktree commands, Read
+.claude/hooks/guard_bash.py AGENT_ONLY_BLOCK; `git tag`/`git branch -D` are not blocked, the others are.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
