@@ -32,6 +32,8 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 
 ## Found by agents
 (moved to ## Next: 0015)
+- 0016: add the en-US packs step (`python3 scripts/update_en_US_packs.py`) after the `import` step in `scripts/bb/rebase.sh` (ADR-0002 step 8)
+- 0016: add the en-US packs step after import in the driver's environment init (`scripts/agents/run_task.py` / night.sh)
 
 ## For the owner
 - commit ADR-0001 to docs/adr/0001-little-bb-floating-window.md (status Proposed → Accepted?)

@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0016-env-en-us-packs-preflight
 depends_on: []
@@ -24,7 +24,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 7a97b28aa7607cffdd4a77fe4dac108f2655a92b
 qa_sha: 7a97b28aa7607cffdd4a77fe4dac108f2655a92b
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Found 2026-10-29: after `npm run import` the engine has no Zen en-US strings until `python3 scripts/update_en_US_packs.py`

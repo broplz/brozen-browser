@@ -8,7 +8,9 @@
 # ui   ≈ 3 min (surfer build --ui)      full ≈ 40 min on M1 Pro (surfer build --jobs N)
 # One build at a time (logs/.build.lock). Output: logs/build-<type>-<stamp>.log; the triage is
 # printed at the end so nobody needs the raw log. Exit: build exit code; 3 = full build required
-# but this role may not run it; 4 = another build is running.
+# but this role may not run it; 4 = another build is running;
+# 2 = bad argument or wrong environment (Node major != .nvmrc, gnu-tar missing).
+# After import, the Zen en-US packs are copied (scripts/update_en_US_packs.py).
 # Compatible with macOS bash 3.2: no arrays, no mapfile, no `timeout`.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -26,6 +28,20 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+preflight() {  # wrong environment must fail fast, before the lock
+  local want found
+  want="$(head -n 1 "$ROOT/.nvmrc")"
+  found="$(node --version 2>/dev/null | sed 's/^v//; s/\..*//')"
+  if [ "$found" != "$want" ]; then
+    echo "Node ${found:-missing} but .nvmrc wants $want: run nvm use (Node 25 breaks surfer import); expected Node $want"
+    return 2
+  fi
+  command -v "${BB_GTAR:-gtar}" >/dev/null 2>&1 && return 0
+  echo "gnu-tar not found (${BB_GTAR:-gtar}): run brew install gnu-tar"
+  return 2
+}
+preflight || exit 2
 
 FULL_RE='\.(c|cc|cpp|cxx|m|mm|h|hpp|idl|webidl|ipdl|rs|toml|configure|build)$|(^|/)moz\.build$|mozconfig|(^|/)Cargo\.lock$'
 needs_full() {
@@ -87,6 +103,7 @@ CAF=""; command -v caffeinate >/dev/null 2>&1 && CAF="caffeinate -dims"
 echo "log: $LOG"
 if [ "$IMPORT" = "1" ]; then
   step "import" npm run import || RC=$?
+  if [ "$RC" = "0" ]; then step "en-US-packs" python3 scripts/update_en_US_packs.py || RC=$?; fi
 fi
 if [ "$RC" = "0" ]; then
   if [ "$TYPE" = "full" ]; then
