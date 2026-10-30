@@ -30,14 +30,18 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def run_agent(role, path, **kw):
-    """Nonzero from run_agent.py means no session started (see its docstring), so the task is
-    blocked here instead of exiting: run_queue.py calls run_task() in-process and must be able
-    to skip it under --continue-on-block."""
+    """Nonzero from run_agent.py means no session started (see its docstring). rc 2 is argparse
+    rejecting what this driver passed — a driver bug, so stop and leave the task alone. Any other
+    rc is a task or environment problem: block the task instead of exiting, because run_queue.py
+    calls run_task() in-process and must be able to skip it under --continue-on-block."""
     cmd = [sys.executable, os.path.join(HERE, "run_agent.py"), role, path]
     for k, v in kw.items():
         if v not in (None, "", False):
             cmd += [f"--{k.replace('_', '-')}", str(v)]
-    if subprocess.run(cmd, cwd=config.ROOT, check=False).returncode:
+    rc = subprocess.run(cmd, cwd=config.ROOT, check=False).returncode
+    if rc == 2:
+        pl.die(f"driver bug: run_agent.py rejected its arguments {cmd[2:]}; task {pl.rel(path)} left untouched")
+    if rc:
         set_blocked(TaskFile(path), "agent_not_started", f"run_agent.py {role} refused to start; see logs/pipeline.log")
 
 
