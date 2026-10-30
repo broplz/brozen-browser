@@ -6,7 +6,7 @@ prefix: e1
 kind: test
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0029-strip-lint-exception
 depends_on: []
@@ -23,7 +23,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 695ed47775a193cde40a54c356203418ed29237c
 qa_sha: 695ed47775a193cde40a54c356203418ed29237c
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0003 v2 Решение 1, "Размещение префов": the ADR-0002 rule "no foreign pref names in `prefs/bb/`" narrows for

@@ -21,6 +21,26 @@ CLASS2 = [r"^src/zen/", r"^src/browser/base/content/zen-[^/]*\.inc\.", r"^src/br
 SCOPE_FREE = [r"^tasks/", r"^logs/", r"^docs/notes/", r"^docs/reports/", r"^tasks/backlog\.md$", r"^\.claude/agent-memory/"]
 PROD_EXCLUDE = [r"(^|/)README\.md$", r"\.md$", r"^tasks/", r"^docs/", r"(^|/)tests?/", r"^\.claude/agent-memory/"]
 README_KEYS = ("epic", "adr", "files", "rebuild")
+ZEN_PREF_DIRS = ("prefs/zen", "prefs/firefox", "prefs/fastfox", "prefs/privatefox")
+STRIP_YAML = "prefs/bb/strip.yaml"
+PREF_NAME_RE = re.compile(r"^\s*-\s*name:\s*([^\s#]+)", re.M)
+
+
+def zen_pref_names(branch):
+    files = pl.git_out("ls-tree", "-r", "--name-only", branch, "--", *ZEN_PREF_DIRS).splitlines()
+    return {m for f in files if f.endswith(".yaml") for m in PREF_NAME_RE.findall(file_text(f, branch))}
+
+
+def prefs_fails(path, text, zen_names):
+    fails = []
+    for name in PREF_NAME_RE.findall(text):
+        if name.startswith("bb."):
+            continue
+        if path != STRIP_YAML:
+            fails.append(f"{path}: pref {name} outside the bb.* namespace (Zen defaults change in prefs/zen/)")
+        elif name in zen_names:
+            fails.append(f"{path}: pref {name}: Zen задаёт этот pref: не дублировать")
+    return fails
 
 
 def changed_files(base, branch):
@@ -125,9 +145,7 @@ def main():
             if not any("BB(" in l for l in added_lines(path, base, branch)):
                 fails.append(f"{path}: Zen file edited without a `BB(eN)` marker on the added lines")
         if re.search(r"^prefs/bb/.*\.ya?ml$", path):
-            for m in re.finditer(r"^\s*-\s*name:\s*([^\s#]+)", file_text(path, branch), re.M):
-                if not m.group(1).startswith("bb."):
-                    fails.append(f"{path}: pref {m.group(1)} outside the bb.* namespace (Zen defaults change in prefs/zen/)")
+            fails += prefs_fails(path, file_text(path, branch), zen_pref_names(branch))
         if re.search(config.APPROVAL_RE, path):
             needs_approval = True
             notes.append(f"{path}: C++/ObjC/IDL source changed — human approval required")
