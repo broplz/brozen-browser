@@ -6,7 +6,7 @@ prefix: e1
 kind: test
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0029-strip-lint-exception
 depends_on: []
@@ -21,8 +21,8 @@ allowed_paths:
 spec: docs/adr/0003-strip-ai-telemetry-sync-eme-mods.md#решение-1--уровни-и-правило-выбора
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 695ed47775a193cde40a54c356203418ed29237c
+qa_sha: 695ed47775a193cde40a54c356203418ed29237c
 blocked_reason:
 ---
 ## Goal
@@ -76,7 +76,37 @@ unblocks 0025, which puts Firefox-only names into `strip.yaml` (ADR 2.1–2.4).
 ## Handoff
 
 ## Result
+Round 1:
+- layer_lint.py: constants `ZEN_PREF_DIRS`, `STRIP_YAML`, `PREF_NAME_RE`; helpers `zen_pref_names(branch)` (ls-tree + file_text) and `prefs_fails(path, text, zen_names)`; main() uses both instead of the inline loop.
+- New test scripts/agents/tests/test_layer_lint_prefs.py covers cases a–f.
+- Verified: the new test prints `test_layer_lint_prefs: OK`; layer_lint on 0024 gives 0 fail (exit 0); on 0029 gives 0 fail.
+- Not run: `diff.sh --names` (only the two allowed files plus the task file changed).
 
 ## Review
+APPROVE
+
+Checklist: 1 spec — DoD 1–3 met to the letter (`zen_pref_names`, `prefs_fails`, `ZEN_PREF_DIRS` tuple next to
+`CLASS2`/`SCOPE_FREE`, one `PREF_NAME_RE`, one `STRIP_YAML` constant, messages verbatim incl. the ADR string; `@cond`
+entries are caught because the regex reads only the name). Nothing extra. 2 scope — only the two allowed_paths
+(`diff.sh --names` re-run by reviewer). 3 layer — n/a (pipeline script, no Zen/Firefox files); layer_lint on 0029:
+0 fail. 4 correctness — names read from the branch via `ls-tree` + `file_text`, no working-tree walk; non-existent
+dirs are fine for `ls-tree`. 5 verification — reviewer re-ran `test_layer_lint_prefs.py` → OK; see item 1 for DoD 5.
+6 hygiene — clean.
+
+Non-blocking:
+1. tasks/0029-strip-lint-exception.md:82 — "layer_lint on 0024 gives 0 fail (exit 0)" does not reproduce from this
+   branch: 0024's branch is gone, so layer_lint falls back to `HEAD` (layer_lint.py:100) and diffs *this* task against
+   0024's allowed_paths → exit 1 (2 scope fails). The meaningful check passes:
+   `python3 scripts/agents/layer_lint.py tasks/0024-strip-inventory.md --base 4119b1329~1 --branch 4119b1329` → 0 fail.
+   Next time state the exact command for regression runs on merged tasks.
+2. scripts/agents/layer_lint.py:148 — `zen_pref_names(branch)` is recomputed for every changed `prefs/bb/*.yaml`;
+   hoist it out of the loop (lazily) if prefs tasks start touching several files. Cosmetic today (one file).
 
 ## QA
+PASS
+
+1. build none: skipped. `test.sh lint` → OK (0 problems); layer_lint on 0029 → 0 fail.
+2. DoD 1–3: helpers `zen_pref_names`, `prefs_fails`, constants `ZEN_PREF_DIRS`, `STRIP_YAML`, `PREF_NAME_RE` present in layer_lint.py (l.24-39).
+3. DoD 4: `python3 scripts/agents/tests/test_layer_lint_prefs.py` → `test_layer_lint_prefs: OK`.
+4. DoD 5: `layer_lint.py tasks/0024-strip-inventory.md --base 4119b1329~1 --branch 4119b1329` → 0 fail.
+5. DoD 6: 0 fail. DoD 7: `diff.sh --names` lists only the two allowed_paths.
