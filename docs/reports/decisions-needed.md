@@ -23,3 +23,8 @@ The owner answers inline, in the ADR or in the task file, and deletes the line.
 Name "BROzen BROwser", short name "BB", vendor "broplz". Reuse Zen's logo assets as placeholders (MPL, attribution in README). No update server yet: disable app updates for the brand. Profile dir stays separate from Zen's.
 
 - 0021 (still not planned, 2026-10-30, after the answers above): the answers cover names, assets and identity, but two of the three blockers are still open. (1) Brand selection: should `scripts/agents/build.sh` read `BB_BRAND` and set the brand before import (a pipeline change you approve, its own task before 0021), or do you set brand `bb` once by hand? (2) Assets: `configs/branding/bb/` does not exist. Will you copy `configs/branding/release/` there by hand, or allow `cp -R configs/branding/release configs/branding/bb` for developer? (3) "Profile dir separate" means option (b): `appId`/`binaryName`/bundle id change. ADR-0002 says that needs an E0 ADR, and none is in docs/adr/. Is this answer enough to go ahead, or do you write ADR E0 first? Also note: 0022 is under "For the owner", not `## Next`, so it is not planned yet.
+
+### 0021 — owner answers, round 2 (2026-10-30)
+1. build.sh reads BB_BRAND (default bb) — approved as task 0023; 0021 depends on it.
+2. Logos: owner copied configs/branding/release → configs/branding/bb (this commit).
+3. appId / binaryName / bundle id / profile dir stay as Zen's in 0021. Separate profile dir is deferred to ADR E0 (owner writes it); not a blocker for 0021.
