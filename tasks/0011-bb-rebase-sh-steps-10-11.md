@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0011-bb-rebase-sh-steps-10-11
 depends_on: [0014, 0008, 0009]
@@ -25,7 +25,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 399c98431312dab3cf0e76f17b3e6f9c5736e404
 qa_sha: 399c98431312dab3cf0e76f17b3e6f9c5736e404
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Finish `scripts/bb/rebase.sh` with ADR-0002 Решение 4 steps 10-11: after `lint`, run the smoke checklist, package and

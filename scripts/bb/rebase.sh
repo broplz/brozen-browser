@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # BB rebase runbook (ADR-0002 Решение 4): steps 1-4 preflight, fetch, recon, rebase/<tag>;
-# steps 5-9 deps, engine, patches, import, build, lint (post_rebase).
-#   rebase.sh <zen-tag>              run steps 1-4
+# steps 5-11 deps, engine, patches, import, build, lint, smoke, package, install, finalize, publish
+# (post_rebase).
+#   rebase.sh <zen-tag>              run steps 1-11
 #   rebase.sh --continue <zen-tag>   resume after the conflicts of step 4 were resolved
 # Exit: 0 ok · 1 failure · 2 usage · 3 stopped on a git conflict.
 # Env overrides: BB_REPO_DIR BB_MAIN_BRANCH BB_UPSTREAM_REMOTE BB_MIN_FREE_GB BB_GTAR BB_LOG_DIR
-#   BB_ENGINE_DIR BB_TARBALL_DIR BB_PATCHES NVM_DIR.
-# Never touches the main branch, never publishes anything, never deletes branches.
+#   BB_ENGINE_DIR BB_TARBALL_DIR BB_PATCHES NVM_DIR
+#   BB_SMOKE (smoke.sh) BB_REPORT (report.sh) BB_DIST_DIR (<repo>/dist, where the DMG is)
+#   BB_APPS_DIR (/Applications) BB_PUSH_REMOTE (origin) BB_POST_STEPS (steps 5-11; tests shorten it).
+# The main branch moves only in `publish`, after smoke, package, install and finalize succeeded;
+# a failed step writes a `failed` report and leaves main untouched.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,6 +27,13 @@ BUILD_CONFIG="surfer.json"
 BB_ENGINE_DIR="${BB_ENGINE_DIR:-$BB_REPO_DIR/engine}"
 BB_TARBALL_DIR="${BB_TARBALL_DIR:-$BB_REPO_DIR/.$(basename "$BUILD_CONFIG" .json)/engine}"
 BB_PATCHES="${BB_PATCHES:-$BB_ROOT/scripts/bb/patches.sh}"
+BB_SMOKE="${BB_SMOKE:-$BB_ROOT/scripts/bb/smoke.sh}"
+BB_REPORT="${BB_REPORT:-$BB_ROOT/scripts/bb/report.sh}"
+BB_DIST_DIR="${BB_DIST_DIR:-$BB_REPO_DIR/dist}"
+BB_APPS_DIR="${BB_APPS_DIR:-/Applications}"
+BB_PUSH_REMOTE="${BB_PUSH_REMOTE:-origin}"
+BB_POST_STEPS="${BB_POST_STEPS:-deps engine patches import build lint smoke package install finalize publish}"
+BB_REBASE_DOCS="$BB_REPO_DIR/docs/rebase"
 export BB_ENGINE_DIR
 TOOLCHAIN_FILES=".nvmrc rust-toolchain.toml package-lock.json requirements.txt"
 
@@ -218,13 +229,90 @@ do_import() { npm_or_fail "npm run import" npm run import; }
 do_build() { npm_or_fail "npm run build" caffeinate -dims npm run build -- --jobs 6; }
 do_lint() { npm_or_fail "npm run lint" npm run lint; }
 
+# ---- step 10 ------------------------------------------------------------------------------
+do_smoke() { bash "$BB_SMOKE" "$Y"; }
+
+do_package() { npm_or_fail "npm run package" npm run package; }
+
+# newest DMG of $BB_DIST_DIR -> $BB_APPS_DIR/<name>.app; the DMG is detached on every path
+do_install() {
+  local dmg mnt app dest rc=0
+  dmg="$({ ls -t "$BB_DIST_DIR"/*.dmg 2>/dev/null || true; } | head -n 1)"
+  if [ -z "$dmg" ]; then say_fail "no DMG in $BB_DIST_DIR"; return 1; fi
+  mnt="$(mktemp -d)"
+  if ! hdiutil attach -nobrowse -mountpoint "$mnt" "$dmg"; then
+    rmdir "$mnt"
+    say_fail "cannot attach $dmg"
+    return 1
+  fi
+  app="$({ ls -d "$mnt"/*.app 2>/dev/null || true; } | head -n 1)"
+  if [ -d "$app" ]; then
+    dest="$BB_APPS_DIR/$(basename "$app")"
+    mkdir -p "$BB_APPS_DIR" && rm -rf "$dest" && ditto "$app" "$dest" || rc=1
+  else
+    say_fail "no .app in $dmg"
+    rc=1
+  fi
+  hdiutil detach "$mnt" || true
+  rmdir "$mnt" 2>/dev/null || true
+  [ "$rc" -eq 0 ] || say_fail "install from $dmg failed"
+  return "$rc"
+}
+
+# ---- step 11 ------------------------------------------------------------------------------
+# rewrite_base <zen> <firefox> <commit> — the three keys of the `base:` block, rest byte-identical
+rewrite_base() {
+  awk -v z="$1" -v f="$2" -v c="$3" '
+    /^base:/ { b = 1; print; next }
+    b && /^[^ ]/ { b = 0 }
+    b && /^ +zen:/ { sub(/zen:.*/, "zen: " z) }
+    b && /^ +firefox:/ { sub(/firefox:.*/, "firefox: " f) }
+    b && /^ +commit:/ { sub(/commit:.*/, "commit: " c) }
+    { print }' "$LAYER_YAML"
+}
+
+# on rebase/Y: new base in layer.yaml + the ok report, one commit
+do_finalize() {
+  local fy tmp
+  fy="$(tag_firefox "$Y")"
+  tmp="$(mktemp)"
+  rewrite_base "$Y" "$fy" "$(g rev-parse --short "refs/tags/$Y^{commit}")" >"$tmp" &&
+    cat "$tmp" >"$LAYER_YAML" || { rm -f "$tmp"; say_fail "cannot rewrite layer.yaml"; return 1; }
+  rm -f "$tmp"
+  BB_REBASE_DOCS="$BB_REBASE_DOCS" bash "$BB_REPORT" "$Y" "$BB_LOG" ok || { say_fail "report failed"; return 1; }
+  g add src/bb/layer.yaml "docs/rebase/$Y.md" docs/rebase/README.md &&
+    g commit -q -m "rebase: Zen $Y (Firefox $fy)" || { say_fail "commit failed"; return 1; }
+}
+
+# the only place that moves main: expects origin's main to be the one the rebase started from
+do_publish() {
+  local old
+  old="$(g rev-parse "$BB_MAIN_BRANCH")"
+  # the tag does not depend on main: create it first, so a failure here leaves main untouched
+  g tag "bb/base/$Y" "refs/tags/$Y^{commit}" || { say_fail "cannot create tag bb/base/$Y"; return 1; }
+  publish_rollback() {
+    g switch -q "rebase/$Y" && g branch -f "$BB_MAIN_BRANCH" "$old" && g tag -d "bb/base/$Y" >/dev/null ||
+      { say_fail "$1; rollback failed — restore by hand: git switch rebase/$Y; git branch -f $BB_MAIN_BRANCH $old; git tag -d bb/base/$Y"; return 1; }
+    say_fail "$1, $BB_MAIN_BRANCH restored"
+  }
+  if ! { g branch -f "$BB_MAIN_BRANCH" "rebase/$Y" && g switch -q "$BB_MAIN_BRANCH"; }; then
+    publish_rollback "cannot move $BB_MAIN_BRANCH" || true
+    return 1
+  fi
+  if ! g push --atomic --force-with-lease="$BB_MAIN_BRANCH:$old" "$BB_PUSH_REMOTE" "$BB_MAIN_BRANCH" "refs/tags/bb/base/$Y"; then
+    publish_rollback "push to '$BB_PUSH_REMOTE' rejected" || true
+    return 1
+  fi
+  g branch -d "rebase/$Y"
+}
+
 post_rebase() {
   local n
   cd "$BB_REPO_DIR"
-  echo "post-rebase: steps 5-9" | tee -a "$BB_LOG"
+  echo "post-rebase: steps 5-11" | tee -a "$BB_LOG"
   NVM_RC=0
   use_node >>"$BB_LOG" 2>&1 || NVM_RC=$?
-  for n in deps engine patches import build lint; do
+  for n in $BB_POST_STEPS; do
     run_step "$n" post
   done
 }
@@ -237,6 +325,12 @@ run_step() {
     0) return 0 ;;
     3) exit 3 ;;
   esac
+  # the report lands in the work tree: only on rebase/Y; on main it would dirty the tree and fail the next preflight
+  if [ "$(g symbolic-ref --short -q HEAD || true)" = "rebase/$Y" ]; then
+    BB_REBASE_DOCS="$BB_REBASE_DOCS" bash "$BB_REPORT" "$Y" "$BB_LOG" failed "$1" || true
+  else
+    echo "note: no failed report for step $1 (HEAD is not rebase/$Y)" >>"$BB_LOG"
+  fi
   msg="$({ grep '^rebase: ' "$BB_LOG" || true; } | tail -n 1)"
   echo "${msg:-rebase: step $1 failed (exit $rc)}" >&2
   if [ -n "${2:-}" ]; then echo "stop: $1" >&2; fi
