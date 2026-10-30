@@ -88,10 +88,36 @@ def head() -> str:
     return git_out("rev-parse", "HEAD")
 
 
+CODE_PATHSPEC = (".", ":(exclude)tasks", ":(exclude)logs", ":(exclude).claude/agent-memory")
+
+
 def code_head(branch: str) -> str:
     """Last commit on <branch> that touched something outside tasks/ and logs/ (the SHA verdicts refer to)."""
-    out = git_out("log", "-1", "--format=%H", branch, "--", ".", ":(exclude)tasks", ":(exclude)logs", ":(exclude).claude/agent-memory")
+    out = git_out("log", "-1", "--format=%H", branch, "--", *CODE_PATHSPEC)
     return out or git_out("rev-parse", branch)
+
+
+def code_patch_id(base: str, rev: str) -> str:
+    """`git patch-id --stable` of the code diff of <rev> against merge-base(base, rev); "" if empty or unknown."""
+    mb = git("merge-base", base, rev, check=False)
+    if mb.returncode != 0:
+        return ""
+    diff = git("diff", mb.stdout.strip(), rev, "--", *CODE_PATHSPEC, check=False).stdout
+    if not diff.strip():
+        return ""
+    r = subprocess.run(["git", "patch-id", "--stable"], cwd=config.ROOT, input=diff, capture_output=True, text=True, check=False)
+    return r.stdout.split(" ")[0]
+
+
+def same_code(base: str, sha: str, branch: str) -> bool:
+    """True when verdict <sha> is the code head of <branch>, or has the same code diff (patch-id) against its base."""
+    if git("cat-file", "-e", f"{sha}^{{commit}}", check=False).returncode != 0:
+        return False
+    code = code_head(branch)
+    if code.startswith(sha) or sha.startswith(code[:7]):
+        return True
+    pid = code_patch_id(base, sha)
+    return pid != "" and pid == code_patch_id(base, code)
 
 
 def autocommit(message: str) -> bool:

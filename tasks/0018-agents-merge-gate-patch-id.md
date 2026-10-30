@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0018-agents-merge-gate-patch-id
 depends_on: []
@@ -24,7 +24,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 03f9dcadf5c04eef99a54cdd15987802b71bc202
 qa_sha: 03f9dcadf5c04eef99a54cdd15987802b71bc202
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 After the owner rebases a task branch by hand (merge_conflict), `reviewed_sha`/`qa_sha` point at
