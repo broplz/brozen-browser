@@ -41,11 +41,13 @@ function addNavButton(doc) {
 function buildRow(doc, { pref, restart, value }, actions) {
   const row = create(doc, "div", { class: "bb-strip-row" });
   const toggle = create(doc, "moz-toggle", { "data-l10n-id": l10nId(pref) });
-  toggle.pressed = value;
+  // The switch reads "feature enabled"; the pref keeps "true = stripped".
+  toggle.pressed = !value;
   toggle.addEventListener("toggle", () => {
-    actions.setPref(pref, toggle.pressed);
+    const stripped = !toggle.pressed;
+    actions.setPref(pref, stripped);
     if (pref === MODS_SWITCH) {
-      doc.documentElement.toggleAttribute(MODS_ATTRIBUTE, toggle.pressed);
+      doc.documentElement.toggleAttribute(MODS_ATTRIBUTE, stripped);
     }
   });
   row.append(toggle);

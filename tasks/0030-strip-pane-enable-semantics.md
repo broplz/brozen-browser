@@ -6,7 +6,7 @@ prefix: e1
 kind: feature
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0030-strip-pane-enable-semantics
 depends_on: [0028]
@@ -23,7 +23,7 @@ returns: 0
 sessions: 0
 reviewed_sha: b000cc983b2d08ed064597a43c7a2b77feac3e74
 qa_sha: b000cc983b2d08ed064597a43c7a2b77feac3e74
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0003 2.7 (pane from 0027): the owner wants each switch to read as "this feature is enabled", not "this feature is
