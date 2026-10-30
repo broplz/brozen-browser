@@ -20,24 +20,19 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - 0010 layer: `scripts/bb/l10n.sh` (bare mirror cache + sparse checkout en-US, ru) — ADR-0002 §Решение 4 "Кэш" · S · build none · depends 0002
 - 0011 layer: rebase.sh steps 10-11 (smoke hand-off, package, main := rebase/<tag>, tag bb/base/<tag>, force-with-lease push, report) — ADR-0002 §Решение 4 · M · build none · depends 0014, 0008, 0009 · needs_approval
 - 0012 layer: dry-run `rebase.sh 1.23.4b` from a `main'` built on 1.23.3b with the same layer; timings into docs/rebase/1.23.4b.md — ADR-0002 план проверки п.4 (R5, R6, R8) · L · role rebaser · needs_approval · depends 0006, 0011
+- 0015 env: `.gitignore` add `!configs/bb/mozconfig` (bare `mozconfig` rule ignores it); `chmod +x scripts/bb/patches.sh` (git mode 100755) — found by agents (0004, 0006) · S · build none
+- 0016 env: post-init step `python3 scripts/update_en_US_packs.py` (else empty UI strings, no shortcuts) — add to `scripts/agents/build.sh`/driver init and the runbook; preflight check for Node 22 (`.nvmrc`; Node 25 breaks surfer import via async-icns rmdir) and gnu-tar on macOS — found 2026-10-29 · S · build none
+- 0017 agents: `triage_log.py` false error on `Notification center failed: Install terminal-notifier`; `.claude/settings.json` allow `Bash(grep *)` and fix why `Bash(bash -n *)` is still denied (night log 2026-10-29) — · S · build none
+- 0018 agents: merge gate — after a manual rebase `reviewed_sha`/`qa_sha` != head is a false positive; compare `git patch-id` of the task diff vs base instead of commit sha (`pipeline_lib.py`, `merge_task.py`) — · M · build none
+- 0019 layer: `rebase.sh` — `do_build` reads `BB_JOBS` (hardcoded `--jobs 6`); define `--continue` after a failed `publish` (finalize commit already on rebase/<tag>: no second commit, re-run publish only) — · S · build none · depends 0011
+- 0020 layer: Browser Console `Key element … missing "key"/"keycode"` warnings for Zen shortcuts (ShortcutUtils.sys.mjs) — find out whether upstream Zen 1.23.4b has them too (official build) or it is our l10n/init; report only — · S · build none · role developer
+- 0021 brand: BB brand instead of `unofficial`/Nightly — surfer brand config under `configs/branding/` modelled on Zen's, placeholder name "BROzen BROwser", logo reuse allowed for now — · M · build full · needs_approval
   - not planned by teamlead (2026-10-29): dry-run mechanics not in the ADR; see docs/reports/decisions-needed.md
 
 ## Found by agents
-(one line each: what, where, why it matters — the teamlead promotes these into tasks)
-- .gitignore:29 bare `mozconfig` ignores configs/bb/mozconfig (0004 force-added it); add `!configs/bb/mozconfig` so future BB edits are not silently skipped.
-- scripts/bb/patches.sh lacks the exec bit (0006: `permission denied` when run directly); needs `chmod +x` (git mode 100755) — npm run bb:* and DoDs expect it.
+(moved to ## Next: 0015)
 
 ## For the owner
 - commit ADR-0001 to docs/adr/0001-little-bb-floating-window.md (status Proposed → Accepted?)
 - Apple Developer account status (E0 signing; approval can take up to two weeks)
 
-## Found 2026-10-29 (env, first build on M3 Max)
-- init: after `npm run init` run `python3 scripts/update_en_US_packs.py` (else empty UI strings + no shortcuts); add to runbook/driver init step
-- branding: build runs as unofficial → "Nightly"; need BB brand config (surfer brand)
-- env pins: Node must be 22 (`.nvmrc`); Node 25 breaks surfer import (async-icns rmdir recursive). gnu-tar required on macOS
-- triage_log.py: false "error" on `Notification center failed: Install terminal-notifier`
-- Browser Console: `Key element … missing "key"/"keycode"` warnings for Zen shortcuts (ShortcutUtils) — check if upstream Zen or l10n
-- rebase.sh: do_build hardcodes --jobs 6 — use BB_JOBS
-- rebase.sh: define --continue behaviour after a failed publish (finalize commit already on rebase/<tag>)
-- settings.json allow: add `Bash(grep *)`; check why `Bash(bash -n *)` still gets denied (see night log 2026-10-29)
-- merge gate: after a manual rebase reviewed_sha/qa_sha mismatch is a false positive — compare `git patch-id` (or diff vs base) instead of commit sha

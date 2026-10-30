@@ -7,3 +7,9 @@ The owner answers inline, in the ADR or in the task file, and deletes the line.
 - 0010: ADR-0002 "Кэш" says the l10n sparse checkout covers `locales/supported-languages` "(v1: en-US, ru)", but the repo file lists 39 Zen languages. l10n.sh (task 0010) reads the file, so no code depends on the answer. Options: (a) trim `locales/supported-languages` to `ru` (class-2 edit, its own task; it also changes Zen's release packaging); (b) keep all 39 and fix the ADR wording.
 - 0012 (not planned, kept in backlog): the ADR plan п.4 dry-run is silent on how to run it without touching the real repo state. Open points: (1) where `main'` on 1.23.3b lives: a throwaway clone/worktree, or a branch in this repo with `BB_MAIN_BRANCH` set; (2) `bb/base/1.23.4b` already exists (п.3), so step 11's tag/push would collide: run against a local bare `BB_PUSH_REMOTE` (0011 adds it), or stop before `publish`; (3) whether the install step may replace the `/Applications` daily driver (0011 adds a `BB_APPS_DIR` override); (4) who builds `main'`: the rebaser agent (git branch work the driver normally owns) or the owner by hand. Once these are answered, 0012 becomes a role-rebaser task with needs_approval.
 
+
+### 0012 — owner answers (2026-10-30)
+1. `main'` lives in a throwaway worktree: `git worktree add ../bb-rebase-test <base-on-1.23.3b>`; never a branch in this repo.
+2. Stop before publish: run with `BB_POST_STEPS` without `publish`; tag `bb/base/1.23.4b` is not touched.
+3. Install must not touch /Applications: `BB_APPS_DIR=/tmp/bb-apps`.
+4. The rebaser agent builds `main'` (worktree + the layer on 1.23.3b); task needs_approval, owner approves the task file before the run.
