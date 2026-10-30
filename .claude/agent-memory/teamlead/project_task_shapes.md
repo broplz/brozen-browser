@@ -119,6 +119,12 @@ Outcome: 0012 blocked 1st session at setup. guard_bash.py:46-47 block `git -C` a
 role (rebaser included), so escalated. Lesson: before planning any task whose Notes contain git ref/worktree commands, Read
 .claude/hooks/guard_bash.py AGENT_ONLY_BLOCK; `git tag`/`git branch -D` are not blocked, the others are.
 
+Outcome: 0025 (M, developer-hard, full build) blocked 1st session on R4, escalated 2026-10-31. ADR 2.9 wanted
+MOZ_DATA_REPORTING empty, but it is derived and its inputs are implied-only project_flags, so no mozconfig form works.
+Lesson: before a DoD asserts a config.status value fixable "in mozconfig only", grep moz.configure for whether the key
+is an option or a derived/implied value (possible_origins=("implied",)). Also 0024's report missed a Zen-set pref
+(browser.discovery.enabled in prefs/privatefox): grep all prefs/ yaml before listing names.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
