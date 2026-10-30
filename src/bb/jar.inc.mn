@@ -3,3 +3,5 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         content/browser/bb/BBStartup.mjs                                        (../../bb/BBStartup.mjs)
+        content/browser/bb/strip/BBStrip.mjs                                    (../../bb/strip/BBStrip.mjs)
+        content/browser/bb/strip/strip.css                                      (../../bb/strip/strip.css)

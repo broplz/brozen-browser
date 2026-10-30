@@ -5,3 +5,9 @@
 console.info(
   `BBStartup: bb.layer.version=${Services.prefs.getIntPref("bb.layer.version", 0)}`
 );
+
+// Shared global: one BBStrip per process, applied once at import.
+const { initWindow } = ChromeUtils.importESModule(
+  "chrome://browser/content/bb/strip/BBStrip.mjs"
+);
+initWindow(window);
