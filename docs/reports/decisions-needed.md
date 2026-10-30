@@ -28,3 +28,5 @@ Name "BROzen BROwser", short name "BB", vendor "broplz". Reuse Zen's logo assets
 1. build.sh reads BB_BRAND (default bb) — approved as task 0023; 0021 depends on it.
 2. Logos: owner copied configs/branding/release → configs/branding/bb (this commit).
 3. appId / binaryName / bundle id / profile dir stay as Zen's in 0021. Separate profile dir is deferred to ADR E0 (owner writes it); not a blocker for 0021.
+
+- 0021/0022/0023 (planned 2026-10-30, FYI, not blocking): (1) 0022 disables updates with `ac_add_options --disable-updater` in `configs/bb/mozconfig` (§Границы `--disable-*` row) instead of the ADR's "Апдейтер" row (`prefs/bb/updates.yaml`): that file could only hold `app.update.*`, and both the CLAUDE.md layer rules and layer_lint allow only `bb.*` names in prefs/bb/. Fix the ADR row, or object in 0022's Notes. (2) surfer.json takes no comments, so 0021 marks its edit with a `"_bb": "BB(e0): …"` key inside `brands.bb` to satisfy layer_lint's `BB(` marker rule. (3) Once 0023 merges, a default `build.sh` fails at the `brand` step until 0021 adds `brands.bb`. 0021 is queued right after it; approve the two together.
