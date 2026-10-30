@@ -6,7 +6,7 @@ prefix: e1
 kind: feature
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0027-strip-settings-pane
 depends_on: [0026]
@@ -26,7 +26,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 1bc55a495afe252cb0f5398bbfddab05f6d09551
 qa_sha: 1bc55a495afe252cb0f5398bbfddab05f6d09551
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0003 v2 S6 and 2.7, variant A: all strip switches in one place without touching Zen or Firefox files. After this
