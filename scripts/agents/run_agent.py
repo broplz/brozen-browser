@@ -85,7 +85,7 @@ def build_prompt(role: str, tf, mode: str, extra: str, session: int, tag: str) -
     if role == "rebaser":
         return (f"Rebase run: bring the layer to Zen tag `{tag}` with scripts/bb/rebase.sh per the runbook "
                 "(ADR-0002 §4). Resolve conflicts using each patch's README and layer.yaml; stop before the smoke "
-                "checklist and write docs/rebase/<tag>.md. " + (task_line or "") + (" " + extra if extra else ""))
+                f"checklist and write docs/rebase/{tag}.md. " + (task_line or "") + (" " + extra if extra else ""))
     return (task_line + " " + extra).strip()
 
 
@@ -107,7 +107,10 @@ def main():
     size = tf.get("size", "M") if tf else "M"
     turns = a.max_turns or config.turns_for(role, size)
     budget = a.budget or config.budget_for(role, size)
-    prompt = build_prompt(role, tf, a.mode, a.prompt, a.session, a.tag)
+    tag = a.tag or (tf.get("zen_tag").strip() if tf else "")
+    if role == "rebaser" and not tag:
+        pl.die("rebaser needs a Zen tag: set `zen_tag:` in the task frontmatter or pass --tag")
+    prompt = build_prompt(role, tf, a.mode, a.prompt, a.session, tag)
 
     # A clean environment: when the driver itself runs inside a Claude Code session (Remote
     # Control, an interactive shell), the parent's CLAUDE_* variables would make the child
