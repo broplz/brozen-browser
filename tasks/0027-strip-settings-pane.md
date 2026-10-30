@@ -6,7 +6,7 @@ prefix: e1
 kind: feature
 role: developer
 size: M
-status: ready
+status: approved
 base: feat/layer
 branch: task/0027-strip-settings-pane
 depends_on: [0026]
@@ -22,10 +22,10 @@ allowed_paths:
   - src/bb/jar.inc.mn
   - src/bb/moz.build
 spec: docs/adr/0003-strip-ai-telemetry-sync-eme-mods.md#27-панель-brozen--инъекция-из-своего-кода
-returns: 0
+returns: 1
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 1bc55a495afe252cb0f5398bbfddab05f6d09551
+qa_sha: 1bc55a495afe252cb0f5398bbfddab05f6d09551
 blocked_reason:
 ---
 ## Goal
@@ -83,7 +83,67 @@ hides `#category-zen-marketplace` while `bb.strip.mods=true` (ADR 2.5). If varia
 ## Handoff
 
 ## Result
+Round 2 (review items 1-2):
+- `BBStrip.mjs` registers `DOMContentLoaded: { capture: true }`, so the actor runs before the page's `init_all`;
+  the child comment and docs/notes/about-preferences-injection.md now match. Ordering is no longer an open
+  assumption in code; [human] DoD 9 still checks the `#brozen` deep link at runtime. Not rebuilt (one-line change).
+
+Round 1 (variant A, no fallback needed):
+- `BBStrip.mjs` registers once per process the `BBStripPane` window actor (`matches` about:preferences*/about:settings*)
+  and an `L10nFileSource` over `chrome://browser/content/bb/strip/l10n/{locale}/` (en-US, ru).
+- Child (`BBStripPaneChild.sys.mjs`, DOMContentLoaded) calls `injectPane` from `brozen-pane.mjs`: adds the stylesheet,
+  a `moz-page-nav-button#category-brozen` (view `paneBrozen`, before `#category-sync`), the pane in `#mainPrefPane`, and
+  `win.register_module("paneBrozen", …)`. Mount point evidence: `preferences.js` `register_module` (function decl,
+  global), `gotoPref` lookup by `view`, `search()` by `data-category` — see docs/notes/about-preferences-injection.md.
+- Parent (`BBStripPaneParent.sys.mjs`) serves the SWITCHES state, sets only known `bb.strip.*` prefs, restarts via
+  `quit-application-requested` + `Services.startup.quit(eAttemptQuit|eRestart)`.
+- Marketplace hidden by `:root[bb-strip-mods] #category-zen-marketplace` in `brozen-pane.css`.
+- Verified: `build.sh ui` OK, `test.sh lint` OK (layer_lint 0 fail), DoD 3 grep empty.
+- Not run: [human] items 9-12 (no UI session). Ordering assumption (actor's DOMContentLoaded runs before the page's
+  `init_all`) is untested at runtime — if `#brozen` deep-link falls back to Sync, that is where to look.
+- Open question: DoD 10 says "toggle on → back to `false`"; I read the switch as the `bb.strip.*` value itself
+  (on = stripped = true, matching BBStrip.mjs), so labels are "Remove X".
 
 ## Review
+APPROVE
+1. Round-1 item 1 fixed: src/bb/strip/BBStrip.mjs:166 now registers `DOMContentLoaded: { capture: true }`.
+2. Round-1 item 2 fixed: BBStripPaneChild.sys.mjs:6-7, docs/notes/about-preferences-injection.md:9-11 and ## Result
+   agree with the registration; the deep link stays a [human] check under DoD 9.
+
+Checklist: (1) spec — unchanged from round 1 apart from the fix; matches DoD 2-6. (2) scope — src/bb/strip/** +
+jar.inc.mn + docs/notes/ (sanctioned by the teamlead notes). (3) layer — layer_lint 12 files, 0 fail, 0 warn; DoD 3
+grep re-run, empty. (4) correctness — parent writes only KNOWN prefs; restart goes through quit-application-requested.
+(5) Result claims real; the round-2 one-line change was not rebuilt, as stated — qa builds. (6) hygiene clean.
+
+---
+REQUEST_CHANGES
+1. src/bb/strip/BBStrip.mjs:166 — the actor registers `events: { DOMContentLoaded: {} }` without `capture: true`, so
+   it is a bubble listener on the chrome event handler. `preferences.js:549` adds `init_all` on `document` (target
+   phase), which therefore runs first: `gotoPref()` reads `#brozen` / the last-used pane before `paneBrozen` is
+   registered and the nav button exists, and falls back. This is exactly the untested ordering assumption in
+   ## Result. Fix: `events: { DOMContentLoaded: { capture: true } }` (capture on the chrome event handler fires
+   before the document's target-phase listeners).
+2. src/bb/strip/BBStripPaneChild.sys.mjs:6-7 and docs/notes/about-preferences-injection.md:9-10 state "capture" as
+   a fact; once item 1 is fixed they become true — keep them consistent with the registration and update the
+   ## Result line on ordering (no longer an open assumption, but still [human] DoD 9 checks the deep link).
+
+Checklist: (1) spec — variant A, rows from SWITCHES, restart via quit-application-requested + eAttemptQuit|eRestart,
+Fluent en-US/ru, marketplace CSS under `:root[bb-strip-mods]` — matches DoD 2-6 except the ordering bug above.
+(2) scope — src/bb/strip/** + jar.inc.mn; docs/notes/ is sanctioned by the teamlead notes. (3) layer — no Zen/Firefox
+file, no patch, no pref outside bb.*; layer_lint 0 fail; DoD 3 grep empty (re-run). BBStrip.mjs is imported via
+`ChromeUtils.importESModule` (shared global), so actor/L10n registration happens once per process. (4) prefs written
+only in the parent and only for KNOWN switches; fillPane errors are caught. (5) ui build log
+logs/build-ui-20261031-022348.log reports OK after the developer session start. (6) hygiene clean.
 
 ## QA
+PASS
+1. DoD 1: diff.sh --names lists 9 files: docs/notes (sanctioned), src/bb/jar.inc.mn, src/bb/strip/**. No Zen/Firefox file, no .patch, no layer.yaml.
+2. DoD 2: BBStrip.mjs:166-168 registers the actor with `DOMContentLoaded: { capture: true }` and `matches` about:preferences*/about:settings*. Files are under src/bb/strip/ and packaged via jar.inc.mn.
+3. DoD 3: the grep for media./browser.ml/identity./zen./extensions. over brozen-pane.* returns no output. The parent builds its rows from SWITCHES and writes only KNOWN prefs.
+4. DoD 4: the restart flag comes from SWITCHES. restartBrowser() notifies quit-application-requested, then calls Services.startup.quit(eAttemptQuit|eRestart).
+5. DoD 5: l10n/en-US and l10n/ru .ftl files exist; brozen-pane.mjs has no hard-coded UI text (grep empty), only data-l10n-id.
+6. DoD 6: brozen-pane.css:6 hides `:root[bb-strip-mods] #category-zen-marketplace`. brozen-pane.mjs sets the attribute from the mods pref.
+7. DoD 7: build.sh ui → BUILD RESULT: OK (logs/build-ui-20261031-022704.log). test.sh lint → TEST RESULT: OK, 0 problems (logs/test-lint-20261031-022735.log).
+8. DoD 8: layer_lint → 12 files, 0 fail, 0 warn.
+
+For the human: DoD 9-12 (runtime checks in a fresh profile: BROzen category, `#brozen` deep link, AI/EME toggles, Browser Console clean) are not run by QA.
