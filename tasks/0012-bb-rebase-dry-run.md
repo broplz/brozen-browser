@@ -6,7 +6,7 @@ prefix: layer
 kind: rebase
 role: rebaser
 size: L
-status: ready
+status: blocked
 base: feat/layer
 branch: task/0012-bb-rebase-dry-run
 depends_on: [0006, 0011]
@@ -21,10 +21,10 @@ allowed_paths:
   - tasks/backlog.md
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#риски-и-план-проверки-фаза-0-до-7-ноября
 returns: 0
-sessions: 0
+sessions: 1
 reviewed_sha:
 qa_sha:
-blocked_reason:
+blocked_reason: hook guard_bash.py:47 blocks git worktree/reset/rebase for rebaser; dry-run setup impossible
 ---
 ## Goal
 ADR-0002 plan п.4 (closes R5, R6, R8): run the full runbook path with a Firefox tarball change without waiting for
@@ -80,3 +80,29 @@ Git mechanics the answers imply (worktrees share refs with this repo, so these r
   `git worktree remove --force ../bb-rebase-test`, `git branch -D dryrun/main rebase/1.23.4b`, `git tag -d bb/base/1.23.3b`.
   Never `git push`, never touch `main` or `bb/base/1.23.4b`, never `npm run reset-ff`.
 - If a hook blocks work outside the repo (`../bb-rebase-test`) or `git worktree`: that is a Handoff + blocked, not a workaround.
+
+## Handoff
+Session 1 (rebaser, 2026-10-30). Blocked at setup, before anything ran. Nothing was created, changed or built.
+
+What happened
+1. The driver prompt gave an empty target tag ("Zen tag ``"). I used the task file instead: `1.23.4b`.
+2. State before the run: `main` = `68f21746c41de051715bc63009f6c76e2fad98ec`, `feat/layer` = `4c92186a87a9…`,
+   `1.23.3b` = `6adb8106…`, `1.23.4b` = `bb/base/1.23.4b^{commit}` = `541ee55196395ee8082862b83c84c90ab41d9f6d`;
+   `git tag -l "bb/base/*"` → only `bb/base/1.23.4b`. None of these were touched.
+3. `git worktree list` and then `git worktree add -b dryrun/main ../bb-rebase-test 1.23.3b` were both BLOCKED by
+   `.claude/hooks/guard_bash.py:47`. That rule blocks `git (switch|checkout|merge|rebase|push|pull|fetch|stash|worktree|cherry-pick|revert|reset)`
+   for every role, with no rebaser exemption.
+4. The setup in the Notes also needs `git -C ../bb-rebase-test reset --hard`, `git rebase --onto 1.23.3b …` and
+   `git worktree remove`. Rule 47 blocks all of them too, so even a partial run can't be set up or cleaned up.
+   Per the Notes ("hook blocks … `git worktree`: Handoff + blocked"), I tried no workaround. In particular I did
+   not run rebase.sh in this repo: that would break owner answer 1 (throwaway worktree) and risk `main`.
+
+Next step (owner/teamlead decision, one of):
+- a) Add a rebaser exemption to guard_bash.py:47 for `git worktree add|remove ../bb-rebase-test`, `git -C ../bb-rebase-test (reset|rebase|tag)`,
+  `git branch -D dryrun/main rebase/1.23.4b` and `git tag -d bb/base/1.23.3b`. Then re-run this task unchanged.
+- b) The owner runs the setup by hand (worktree add, reset to feat/layer, `rebase --onto 1.23.3b bb/base/1.23.4b`, layer.yaml
+  base commit, `git tag bb/base/1.23.3b`). The rebaser then only runs `bash ../bb-rebase-test/scripts/bb/rebase.sh 1.23.4b` with the
+  env from the Notes (role-allowed by guard_bash.py:62). The owner also does the cleanup. Caveat: rebase.sh's own `git switch -c`
+  runs inside the script, not as a Bash-tool command, so the hook shouldn't see it. Still, verify this before relying on it.
+- Also: the driver's prompt template should pass the tag (it came through empty).
+Recorded in tasks/backlog.md under "Found by agents".
