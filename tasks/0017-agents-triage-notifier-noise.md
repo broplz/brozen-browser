@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0017-agents-triage-notifier-noise
 depends_on: []
@@ -20,8 +20,8 @@ allowed_paths:
 spec: tasks/backlog.md
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 0eaf17c874e8526af504c3cd2e8b41737828ce31
+qa_sha: 0eaf17c874e8526af504c3cd2e8b41737828ce31
 blocked_reason:
 ---
 ## Goal
@@ -49,3 +49,33 @@ is owner work — see docs/reports/decisions-needed.md).
 - Test style: like scripts/agents/tests/build_preflight_test.sh (bash, mktemp -d, trap cleanup,
   `check` helper, prints `triage_log_test: OK` and exits 0 only when all asserts pass).
 - `.claude/settings.json` (allow `Bash(grep *)`, `bash -n`) is protected; do not attempt it.
+
+## Result
+Round 1: added `Notification center failed` as one alternative to `IGNORE_RE` in
+scripts/agents/triage_log.py (ERROR_RE untouched). Added scripts/agents/tests/triage_log_test.sh
+(mixed log: real error kept, notifier line absent; noise-only log: `0 error lines, 0 distinct` and
+`no error lines matched`). Verified: `/bin/bash scripts/agents/tests/triage_log_test.sh` → `triage_log_test: OK`.
+Did not run diff.sh. No open questions.
+
+## Review
+APPROVE
+Checklist:
+1. Spec: DoD 1–5 hold. Reviewer ran `/bin/bash scripts/agents/tests/triage_log_test.sh` → `triage_log_test: OK`.
+   triage_log.py diff is one line, one added alternative in `IGNORE_RE` (triage_log.py:19); `ERROR_RE` untouched.
+   The asserted zero-error strings (`0 error lines, 0 distinct`, `no error lines matched`) exist at triage_log.py:57,72.
+   Without the fix, the mixed log would report the notifier line (it matches `\bFAILED\b`), so the test really guards the change.
+2. Scope: diff --stat shows only the two allowed_paths, plus the task file. No existing tests touched.
+3. Layer: no Zen/Firefox files. layer_lint: 0 fail, 0 warn.
+4. Correctness: `set -uo pipefail`, `mktemp -d`, and trap cleanup all match build_preflight_test.sh. Exit code is 0 only when all asserts pass.
+5. Result: the claimed test run is real. The developer admits not running diff.sh; the reviewer checked DoD 4 from diff --stat.
+6. Hygiene: clean, English, no TODOs.
+Non-blocking nits (no change required):
+1. scripts/agents/tests/triage_log_test.sh:10: the helper is named `fail` rather than the `check` the teamlead suggested. Behaviour is equivalent.
+
+## QA
+PASS
+1. Build type none: skipped. `scripts/agents/test.sh lint` → OK (0 problems); layer_lint 3 files, 1 production line, 0 fail, 0 warn.
+2. DoD 1: `/bin/bash scripts/agents/tests/triage_log_test.sh` → `triage_log_test: OK`, exit 0.
+3. DoD 2–3: test content covers mixed log (notifier line absent, `real failure here` present) and noise-only log (`0 error lines, 0 distinct`). The test passes.
+4. DoD 4: `diff.sh 0017 --names` needs the task path (it crashed on the bare id). `git diff --stat feat/layer` shows only triage_log.py and triage_log_test.sh, plus the task file.
+5. DoD 5: `git diff feat/layer -- scripts/agents/triage_log.py` changes only the `IGNORE_RE` line (one alternative added, `Notification center failed`); `ERROR_RE` is untouched.
