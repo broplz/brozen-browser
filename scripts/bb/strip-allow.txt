@@ -1,0 +1,77 @@
+# strip-allow.txt: Firefox prefs under the strip-check drift prefixes that BB does not set (ADR-0003 2.9).
+# One name per line; a "#" line above each group gives the reason. A new unknown name fails `strip-check.sh` drift.
+# Seeded from the first real run (task 0025). Masters: browser.ml.chat.enabled, browser.ml.linkPreview.enabled
+# (Zen, prefs/firefox/ai.yaml), browser.tabs.groups.smart.enabled, identity.fxaccounts.enabled,
+# media.gmp-widevinecdm.enabled (prefs/bb/strip.yaml), all false.
+
+# AI chat tuning, provider URL and prompt text; no effect while browser.ml.chat.enabled=false
+browser.ml.chat.hideLocalhost
+browser.ml.chat.maxLength
+browser.ml.chat.prompt.prefix
+browser.ml.chat.prompts.0
+browser.ml.chat.prompts.1
+browser.ml.chat.prompts.3
+browser.ml.chat.prompts.4
+browser.ml.chat.provider
+browser.ml.chat.shortcut.onboardingMouseoverCount
+browser.ml.chat.shortcuts.debounce
+browser.ml.chat.shortcuts.longPress
+
+# embedding model ids and sizes; data only, used by the smart tab-groups engine that is stripped
+browser.ml.embedGen.textEmbeddingFeatureModel
+browser.ml.embedGen.textEmbeddingSize
+
+# link-preview tuning, UI state and timings; no effect while browser.ml.linkPreview.enabled=false
+browser.ml.linkPreview.allowedLanguages
+browser.ml.linkPreview.collapsed
+browser.ml.linkPreview.ignoreMs
+browser.ml.linkPreview.longPressMs
+browser.ml.linkPreview.noKeyPointsRegions
+browser.ml.linkPreview.outputSentences
+browser.ml.linkPreview.recentTypingMs
+browser.ml.linkPreview.smokeTest.lastBuildID
+browser.ml.linkPreview.supportedLocales
+# link-preview trigger sub-switches, gated by browser.ml.linkPreview.enabled=false (open question in 0025 ## Result)
+browser.ml.linkPreview.blockListEnabled
+browser.ml.linkPreview.longPress
+browser.ml.linkPreview.shift
+browser.ml.linkPreview.shiftAlt
+
+# smart tab-groups model ids and thresholds; no effect while browser.tabs.groups.smart.enabled=false
+browser.tabs.groups.smart.agglomerativeThresholdInt
+browser.tabs.groups.smart.clusterMethod
+browser.tabs.groups.smart.embeddingModelRevision
+browser.tabs.groups.smart.nearestNeighborThresholdInt
+browser.tabs.groups.smart.suggestOtherTabsMethod
+browser.tabs.groups.smart.topicModelRevision
+
+# Firefox Accounts endpoints, versions, intervals and UI-state counters; unused while identity.fxaccounts.enabled=false
+identity.fxaccounts.autoconfig.uri
+identity.fxaccounts.commands.missed.fetch_interval
+identity.fxaccounts.contextParam
+identity.fxaccounts.pairing.version
+identity.fxaccounts.remote.oauth.uri
+identity.fxaccounts.remote.pairing.uri
+identity.fxaccounts.remote.profile.uri
+identity.fxaccounts.remote.root
+identity.fxaccounts.toolbar.accessed
+identity.fxaccounts.toolbar.appMenuSignInPromo.dismissed
+identity.fxaccounts.toolbar.syncSetup.panelAccessed
+# Firefox Accounts sub-switches, gated by identity.fxaccounts.enabled=false (open question in 0025 ## Result)
+identity.fxaccounts.commands.remoteTabManagement.enabled
+identity.fxaccounts.pairing.enabled
+identity.fxaccounts.telemetry.clientAssociationPing.enabled
+identity.fxaccounts.telemetry.clientInfoPing.enabled
+identity.fxaccounts.toolbar.defaultVisible
+identity.fxaccounts.toolbar.enabled
+identity.fxaccounts.toolbar.pxiToolbarEnabled
+identity.fxaccounts.toolbar.pxiToolbarEnabled.monitorEnabled
+identity.fxaccounts.toolbar.pxiToolbarEnabled.relayEnabled
+identity.fxaccounts.toolbar.pxiToolbarEnabled.vpnEnabled
+
+# Widevine install id; data only
+media.gmp-widevinecdm.chromium-guid
+# Widevine update sub-switches, gated by media.gmp-widevinecdm.enabled=false (open question in 0025 ## Result)
+media.gmp-widevinecdm.allow-chromium-update
+media.gmp-widevinecdm.force-chromium-beta
+media.gmp-widevinecdm.force-chromium-update

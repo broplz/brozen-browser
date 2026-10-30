@@ -6,7 +6,7 @@ prefix: e1
 kind: script
 role: developer-hard
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0025-strip-prefs-check
 depends_on: [0029]
@@ -27,7 +27,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 92b3f00335e24f4dd3568d2101bf6e1a38083c7d
 qa_sha: 92b3f00335e24f4dd3568d2101bf6e1a38083c7d
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0003 v2 Решение 1, 2.1–2.4, 2.9 and R4: the strip list becomes data plus one executable check, with zero edits

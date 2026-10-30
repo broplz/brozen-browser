@@ -1,0 +1,73 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# ADR-0003 2.7: the five BROzen switches (true = stripped).
+- name: bb.strip.eme
+  value: true
+
+- name: bb.strip.ai
+  value: true
+
+- name: bb.strip.sync
+  value: true
+
+- name: bb.strip.mods
+  value: true
+
+- name: bb.strip.boosts
+  value: false
+
+# ADR-0003 2.1: telemetry has no Firefox-only name left — Zen sets all of it,
+# browser.discovery.enabled included (prefs/privatefox/disablemozilla.yaml).
+
+# ADR-0003 2.2: AI, Firefox-only names (Zen's ai.yaml covers the other seven).
+- name: browser.ml.chat.page
+  value: false
+
+- name: browser.ml.chat.page.footerBadge
+  value: false
+
+- name: browser.ml.chat.page.menuBadge
+  value: false
+
+- name: browser.ml.chat.shortcuts.smartwindow
+  value: false
+
+- name: browser.ml.linkPreview.optin
+  value: false
+
+- name: browser.ml.pageAssist.enabled
+  value: false
+
+- name: browser.tabs.groups.smart.enabled
+  value: false
+
+- name: browser.tabs.groups.smart.userEnabled
+  value: false
+
+- name: browser.tabs.groups.smart.optin
+  value: false
+
+- name: browser.tabs.groups.smart.searchTopicEnabled
+  value: false
+
+- name: browser.search.visualSearch.featureGate
+  value: false
+
+- name: extensions.ml.enabled
+  value: false
+
+# ADR-0003 2.3: Sync.
+- name: identity.fxaccounts.enabled
+  value: false
+
+# ADR-0003 2.4: EME (Zen's media.eme.enabled stays).
+- name: media.gmp-widevinecdm.enabled
+  value: false
+
+- name: media.gmp-widevinecdm.visible
+  value: false
+
+- name: browser.eme.ui.enabled
+  value: false
