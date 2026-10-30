@@ -3,4 +3,3 @@ Launch from a copy of the working profile: window draws, compact mode without bo
 Workspaces switch, a new tab lands in its workspace's container, essentials are in place
 Glance, split, folders: open and close each once
 about:buildconfig shows the flags from configs/bb/mozconfig; about:config shows bb.* prefs with expected values
-Stripped features are absent per ADR-0003 (AI buttons, telemetry, sync, Zen Mods)
