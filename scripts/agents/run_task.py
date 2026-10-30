@@ -30,12 +30,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def run_agent(role, path, **kw):
+    """Nonzero from run_agent.py means no session started (see its docstring), so the task is
+    blocked here instead of exiting: run_queue.py calls run_task() in-process and must be able
+    to skip it under --continue-on-block."""
     cmd = [sys.executable, os.path.join(HERE, "run_agent.py"), role, path]
     for k, v in kw.items():
         if v not in (None, "", False):
             cmd += [f"--{k.replace('_', '-')}", str(v)]
-    if subprocess.run(cmd, cwd=config.ROOT, check=False).returncode:   # run_agent exits 0 even when the agent failed
-        pl.die(f"run_agent.py {role} {pl.rel(path)} refused to start; see logs/pipeline.log")
+    if subprocess.run(cmd, cwd=config.ROOT, check=False).returncode:
+        set_blocked(TaskFile(path), "agent_not_started", f"run_agent.py {role} refused to start; see logs/pipeline.log")
 
 
 def commit_task(path, message):
