@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: rebaser
 size: S
-status: blocked
+status: done
 base: feat/layer
 branch: task/0015-env-gitignore-exec-bit
 depends_on: []
@@ -74,3 +74,6 @@ Next step (owner or teamlead): allow `git update-index --chmod=+x scripts/bb/*.s
 gets this task, or run the 5 commands by hand:
 `git update-index --chmod=+x scripts/bb/{l10n,patches,rebase,report,smoke}.sh`, commit `layer: make BB entry-point
 scripts executable`, then check DoD 1–5.
+
+## Outcome
+Done by owner on feat/layer (hook forbids chmod for agents): exec bit on scripts/bb/*.sh, .gitignore un-ignores configs/bb/mozconfig*.
