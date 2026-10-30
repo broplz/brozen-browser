@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0016-env-en-us-packs-preflight
 depends_on: []
@@ -22,8 +22,8 @@ allowed_paths:
 spec: tasks/backlog.md
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 7a97b28aa7607cffdd4a77fe4dac108f2655a92b
+qa_sha: 7a97b28aa7607cffdd4a77fe4dac108f2655a92b
 blocked_reason:
 ---
 ## Goal
@@ -64,3 +64,37 @@ packs right after every import, so every agent build and qa run gets a usable UI
   edit those files.
 - If the hook denies editing `scripts/agents/build.sh` for role developer: Handoff + blocked, do not work around it.
 - macOS bash 3.2, no arrays (header of build.sh says so).
+
+## Result
+Round 1:
+- build.sh: `preflight()` (Node major vs `.nvmrc`, `BB_GTAR`/gtar) runs after arg parsing, before the lock, exit 2; header documents 2. `en-US-packs` step runs right after a successful `import` (inside the `IMPORT=1` branch).
+- New `scripts/agents/tests/build_preflight_test.sh` (stub node/npm, trap cleanup); docs/notes/README.md `## Build environment`; two "Found by agents" lines in tasks/backlog.md (rebase.sh, driver init).
+- Verified: `bash -n` clean; preflight test prints PASS; `build.sh ui` → BUILD RESULT: OK with `en-US-packs: exit 0` between import and build-ui.
+- Not run separately: DoD 4 (`--no-import`) — by construction the step sits inside the `IMPORT=1` branch. DoD 6 diff.sh not run.
+
+## QA
+PASS
+
+1. DoD 1: `bash -n scripts/agents/build.sh` → no output.
+2. DoD 2: `bash scripts/agents/tests/build_preflight_test.sh` → `PASS`.
+3. DoD 3: `build.sh ui` → BUILD RESULT: OK; log logs/build-ui-20261030-170221.log has `en-US-packs` (line 371) with `en-US-packs: exit 0` (387) between import (369) and build-ui (389).
+4. DoD 4: `build.sh ui --no-import` → OK; log logs/build-ui-20261030-170305.log has only the build-ui step, no en-US-packs.
+5. DoD 5: docs/notes/README.md has `## Build environment` with all required points.
+6. DoD 6: diff.sh --names lists only allowed paths (build.sh, test, README).
+7. `test.sh lint` → OK, layer_lint 0 fail / 0 warn.
+Reviewer's non-blocking nits (message wording, stderr) are not DoD items.
+
+## Review
+APPROVE
+
+Checklist (round 1):
+1. Spec: preflight after arg parsing, before `LOCK=` (build.sh:32-44), exit 2 documented in the header (build.sh:11-13); en-US step only after a successful import, inside `IMPORT=1` (build.sh:106). Docs entry and two backlog lines present. Nothing extra.
+2. Scope: changed files = build.sh, tests/build_preflight_test.sh, docs/notes/README.md, tasks/backlog.md, task file — all allowed. No existing test touched.
+3. Layer: no Zen/Firefox files, no prefs, nothing in engine/; layer_lint 0 fail, 0 warn.
+4. Correctness: bash 3.2 safe (no arrays); a missing node gives an empty `found` → "Node missing", exit 2; the lock is never taken on a refusal; test trap removes `$T`. Zen's scripts not edited.
+5. Verification: `bash scripts/agents/tests/build_preflight_test.sh` → PASS (re-run by reviewer). DoD 3/4 (real ui build, `--no-import` log) are left to qa; the Result says honestly that DoD 4/6 were not run. diff --stat confirms DoD 6.
+6. Hygiene: no secrets, TODOs or dead code.
+
+Non-blocking nits (fix only if the task comes back for another reason):
+1. scripts/agents/build.sh:37 — the `; expected Node $want` suffix repeats `.nvmrc wants $want` just so the DoD grep finds `Node 22`. Write `.nvmrc wants Node $want: run nvm use …` and drop the suffix.
+2. scripts/agents/build.sh:37,41 — the preflight messages go to stdout, but the unknown-argument error at :27 goes to stderr. Send exit-2 messages to `>&2` for consistency.
