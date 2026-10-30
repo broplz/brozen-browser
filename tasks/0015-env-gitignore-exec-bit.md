@@ -51,6 +51,8 @@ renamed copy silently drops it. (2) The BB entry-point scripts are committed as 
 - Role is rebaser only because the agent hook lets only rebaser (and qa for smoke.sh) run commands that name
   `scripts/bb/rebase.sh` / `smoke.sh`. No rebase work here.
 - `lib.sh` is sourced, not executed; tests are run as `bash <test>` — they stay 100644.
+- 2026-10-30 unblock: escalated (docs/reports/decisions-needed.md, line 0015). Mode change is a permission
+  question only the owner can answer; no split or re-spec helps while every role is denied.
 
 ## Handoff
 Session 1 (rebaser), 2026-10-30. The session prompt was framed as a rebase with an empty tag, but this task file says
