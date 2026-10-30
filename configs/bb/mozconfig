@@ -6,6 +6,10 @@
 # What goes here: release flags (PGO/LTO/SDK) and strip flags (--disable-*,
 # MOZ_*=). Who decides them: E0 and ADR-0003.
 # Rule: add or override Zen's flags, never copy them.
-#
+
+# Task 0022: nothing polls Zen's update.xml and no update UI is shown.
+# BB(e0): no BB update server yet, so build without the app updater.
+ac_add_options --disable-updater
+
 # BB is macOS-only, so the macOS fragment is sourced unconditionally.
 . "$topsrcdir/../configs/bb/mozconfig.macos"
