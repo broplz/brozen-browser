@@ -7,3 +7,5 @@
 - [Fixture vs real input](feedback_fixture_vs_real.md) — `wc -lc` real files; `while read` drops a last line without a newline
 - [Rollback paths](feedback_rollback_paths.md) — ref-moving chains: mid-chain failure leaves main moved; check exclusion rules generalize
 - [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths
+
+- [patches.sh exec bit](project_patches_sh_exec_bit.md) — no exec bit; READMEs calling it directly fail
