@@ -30,6 +30,7 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
   - not planned by teamlead (2026-10-29): dry-run mechanics not in the ADR; see docs/reports/decisions-needed.md
   - planned 2026-10-30 (3rd run): 0017 = triage_log.py half only (settings.json half is owner work, decisions-needed), 0018, 0019 (both needs_approval)
   - not planned by teamlead (2026-10-30): brand selection in build.sh, binary asset copy, identity ids — see docs/reports/decisions-needed.md
+  - still not planned (2026-10-30, after the owner's answers): brand selection and the asset copy are unanswered; ids change → E0 ADR? — decisions-needed
   - (the "not planned … 2026-10-29" note above refers to 0012) planned 2026-10-30 after owner answers: tasks/0012 is `draft` until the owner sets `ready`; 0015 role rebaser (hook: only rebaser may name rebase.sh/smoke.sh); 0016 scoped to build.sh, rebase.sh/driver en-US step left for "Found by agents"
 
 ## Found by agents
