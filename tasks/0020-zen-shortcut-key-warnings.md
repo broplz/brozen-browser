@@ -6,7 +6,7 @@ prefix: layer
 kind: docs
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0020-zen-shortcut-key-warnings
 depends_on: []
@@ -19,8 +19,8 @@ allowed_paths:
 spec: tasks/backlog.md
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: e3deab62196806d78a45d3a588e2fe7c1fa97ddb
+qa_sha: e3deab62196806d78a45d3a588e2fe7c1fa97ddb
 blocked_reason:
 ---
 ## Goal
@@ -66,3 +66,43 @@ build/l10n/init. Deliverable: one report file. No code change, no fix. Backlog i
 - Base tag: `bb/base/1.23.4b` (layer.yaml `base.zen: 1.23.4b`, commit 541ee55).
 - Do not run the browser and do not build: build none. Do not edit `src/zen/**`. If the fix is
   obvious, it goes into `## Proposed fix` plus one line in tasks/backlog.md under "Found by agents".
+
+## Result
+Round 1: wrote docs/reports/0020-zen-shortcut-key-warnings.md (5 `## ` headings, verified with grep -c).
+Verdict: unknown. The warning comes from stock Zen code: `git diff --stat bb/base/1.23.4b -- src/zen/kbs`
+is empty. `replaceWithChild()` strips `key`/`keycode` from keys that have none, and Fluent-only Firefox
+keys parse as empty. Whether the official build logs it too depends on Fluent timing, so DoD 8 (owner
+checks official 1.23.4b) decides. Nothing was run or built. Open question: Fluent-vs-parse ordering.
+
+## Review
+APPROVE
+
+1. Spec: DoD 1-7 hold. The diff touches only the report and the task file. `grep -c "^## "` plus the verdict
+   regex gives 6 (5 headings in the right order + 1 `Verdict: unknown`). `## Proposed fix` is prose and names
+   the mechanisms: module replacement (class 2) or an upstream Zen PR. DoD 8 is [human].
+2. Scope: only allowed_paths. layer_lint: 0 fail, 0 warn, 0 production lines. kind: docs, no code.
+3. Layer rules: not applicable (no Zen/Firefox files changed). Not editing src/zen/kbs follows the notes.
+4. Correctness: I checked these citations myself and they hold:
+   - `ShortcutUtils.sys.mjs:58-70` (warn at 65-69).
+   - The callers `browser.js:3574` and `panelUI.js:1416`.
+   - `ZenKeyboardShortcuts.mjs`: 356 (`key?.toLowerCase()` keeps null), 412-431 parseFromXHTML,
+     455-490 replaceWithChild else-branch, 582 isInvalid, 673 clearKeybind, 1533.
+   - `browser-sets.inc.xhtml` 143/145/301 (data-l10n-id, no `key`).
+   `unknown` is the honest verdict: Fluent timing can't be settled by reading code.
+5. Verification: `git diff --stat bb/base/1.23.4b -- src/zen/kbs` is empty when I re-run it. That matches the report.
+6. Hygiene: English, no secrets, no TODOs.
+Non-blocking: a future module replacement should be gated by a `bb.*` pref (F2). Say so when the fix task
+is written.
+
+## QA
+PASS
+
+1. Lint: `scripts/agents/test.sh lint` → OK, 0 problems; layer_lint 0 fail, 0 warn (log: logs/test-lint-20261030-172033.log). Build none, tests none.
+2. DoD 1: diff names → only docs/reports/0020-zen-shortcut-key-warnings.md (plus the task file). `diff.sh 0020 --names` crashed on the id argument (needs a path); I ran it with the task path.
+3. DoD 2: `grep -c "^## "` → 5. Headings are Source, Trigger, Upstream, Verdict, Proposed fix, in order.
+4. DoD 3-4: ShortcutUtils.sys.mjs warn at l.65-69 confirmed by grep. Report cites callers and Trigger with file:line, and gives a listing snippet for affected ids.
+5. DoD 5: `git diff --stat bb/base/1.23.4b -- src/zen/kbs` is empty, as the report says. Fluent dependency is discussed with evidence.
+6. DoD 6: verdict regex count → 1 (`Verdict: unknown`).
+7. DoD 7: Proposed fix is prose only; names module replacement (class 2) or upstream PR.
+
+For the human: DoD 8. Open the official Zen 1.23.4b build, check the Browser Console for the same warnings. This confirms or overturns the `unknown` verdict.
