@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0017-agents-triage-notifier-noise
 depends_on: []
@@ -22,7 +22,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 0eaf17c874e8526af504c3cd2e8b41737828ce31
 qa_sha: 0eaf17c874e8526af504c3cd2e8b41737828ce31
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Night log 2026-10-29: every build log triage shows a false error for mach's line
