@@ -172,9 +172,9 @@ def run_task(path, once=False):
                 return 2
             if config.AUTO_UNBLOCK and not unblock_tried:
                 unblock_tried = True
-                tf = run_unblock(tf)
+                run_unblock(tf)
                 if once:
-                    return 2 if tf.get("status") == "blocked" else 0
+                    return once_rc(path)
                 continue
             pl.notify(f"task {tid} stays blocked ({tf.get('blocked_reason', '?')}); see {pl.rel(path)} and docs/reports/decisions-needed.md")
             return 2
@@ -219,9 +219,14 @@ def run_task(path, once=False):
         else:
             pl.die(f"task {tid}: unknown status '{status}'")
         if once:
-            return 0
+            return once_rc(path)
     pl.notify(f"task {tid}: loop cap ({config.MAX_LOOP_STEPS} steps) reached; check logs/pipeline.log")
     return 2
+
+
+def once_rc(path):
+    """--once exits as the loop would: 2 when the step left the task blocked, else 0."""
+    return 2 if pl.live_task(path).get("status") == "blocked" else 0
 
 
 def bump_returns(tf):
