@@ -6,7 +6,7 @@ prefix: e1
 kind: feature
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0030-strip-pane-enable-semantics
 depends_on: [0028]
@@ -21,8 +21,8 @@ allowed_paths:
 spec: docs/adr/0003-strip-ai-telemetry-sync-eme-mods.md#27-панель-brozen--инъекция-из-своего-кода
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: b000cc983b2d08ed064597a43c7a2b77feac3e74
+qa_sha: b000cc983b2d08ed064597a43c7a2b77feac3e74
 blocked_reason:
 ---
 ## Goal
@@ -62,7 +62,32 @@ strip-check stay as they are. With default prefs the pane shows only Zen Boosts 
 ## Handoff
 
 ## Result
+Round 1:
+- brozen-pane.mjs: switch shows `pressed = !value`, writes `!pressed`; `bb-strip-mods` attribute follows the written pref value.
+- en-US and ru ftl: "enabled" labels/descriptions, no "Remove"; restart note untouched.
+- Verified: `build.sh` ui → OK; `test.sh lint` → OK (layer_lint 0 fail). DoD 5 grep not run separately; the file only has the existing `bb.strip.*` names.
+- Not verified: DoD 7-8 are [human].
 
 ## Review
+APPROVE
+1. Spec/DoD 2: brozen-pane.mjs:45 `pressed = !value`, :47-50 writes `!pressed` and sets the Mods attribute from
+   the written pref value; fillPane (:78) still sets it from state. Matches ADR-0003 2.7 and the teamlead notes.
+2. Scope/DoD 1: only brozen-pane.mjs and the two ftl files; BBStrip.mjs, actors, prefs untouched.
+3. DoD 3: labels match exactly; no "Remove"/"Убрать" left (grep, reviewer re-ran); ru carries the same meaning.
+4. DoD 4: restart note still driven by the `restart` flag (:54-58), unchanged.
+5. DoD 5: the forbidden-prefix grep returns nothing (reviewer re-ran; Result honestly said it was not run).
+6. Layer: layer_lint 0 fail / 0 warn; no Zen flat files touched, so no markers needed. Hygiene clean.
+7. DoD 6 build/lint claims left to qa; DoD 7-8 are [human].
 
 ## QA
+PASS
+1. DoD 1: diff --names lists only brozen-pane.mjs and the two ftl files.
+2. DoD 2: brozen-pane.mjs:45 `pressed = !value`; :47-50 writes `!pressed` and sets `bb-strip-mods` from the written pref value; fillPane:78 uses the state value.
+3. DoD 3: en-US labels match exactly, descriptions say what "on" gives; ru has the same meaning; no "Remove"/"Убрать".
+4. DoD 4: restart note still driven by the `restart` flag (:54-58).
+5. DoD 5: grep for media./browser.ml/identity./zen./extensions. in brozen-pane.* → no output.
+6. DoD 6: build.sh ui → BUILD RESULT: OK (log logs/build-ui-20261031-031008.log); test.sh lint → OK, layer_lint 0 fail 0 warn (log logs/test-lint-20261031-031041.log).
+
+For the human:
+- DoD 7: fresh profile, the BROzen pane shows only "Zen Boosts" on.
+- DoD 8: DRM on → Restart → `media.gmp-widevinecdm.enabled=true`; DRM off → Restart → `false`.
