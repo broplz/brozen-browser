@@ -6,7 +6,7 @@ prefix: layer
 kind: rebase
 role: rebaser
 size: L
-status: draft
+status: ready
 base: feat/layer
 branch: task/0012-bb-rebase-dry-run
 depends_on: [0006, 0011]
