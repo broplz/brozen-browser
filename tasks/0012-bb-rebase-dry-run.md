@@ -14,6 +14,7 @@ build: none
 tests: []
 needs_approval: true
 allow_zen_patch: false
+zen_tag: 1.23.4b
 allowed_paths:
   - docs/rebase/1.23.4b.md
   - docs/rebase/README.md

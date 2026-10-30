@@ -34,7 +34,8 @@ def run_agent(role, path, **kw):
     for k, v in kw.items():
         if v not in (None, "", False):
             cmd += [f"--{k.replace('_', '-')}", str(v)]
-    subprocess.run(cmd, cwd=config.ROOT, check=False)
+    if subprocess.run(cmd, cwd=config.ROOT, check=False).returncode:   # run_agent exits 0 even when the agent failed
+        pl.die(f"run_agent.py {role} {pl.rel(path)} refused to start; see logs/pipeline.log")
 
 
 def commit_task(path, message):

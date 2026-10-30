@@ -14,6 +14,7 @@ build: ui                # none | ui | full — what qa must run before PASS
 tests: []                # Zen mochitest dirs for test.sh (e.g. glance); usually []
 needs_approval: false    # true → the merge waits for "0000 approved" in tasks/approvals.txt
 allow_zen_patch: false   # true only when a BB hunk must live inside one of Zen's patches (ADR-0002 §2 p.4)
+zen_tag:                 # role rebaser only: the Zen tag to bring the layer to (e.g. 1.23.4b); required there
 allowed_paths:           # exact files or narrow globs; the hooks enforce this
   - src/bb/example/example.mjs
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-1
