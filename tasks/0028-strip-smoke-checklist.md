@@ -6,7 +6,7 @@ prefix: e1
 kind: docs
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0028-strip-smoke-checklist
 depends_on: [0027]
@@ -23,7 +23,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 1ea77b452a9a85f7045150e08b36d12656a95385
 qa_sha: 1ea77b452a9a85f7045150e08b36d12656a95385
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0003 v2 2.9, last paragraph: the human smoke checklist gets the strip items, read by `scripts/bb/smoke.sh` from

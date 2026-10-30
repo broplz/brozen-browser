@@ -12,4 +12,5 @@
 - [Review text is linted](feedback_review_text_linted.md) — marker word in ## Review fails layer_lint → QA FAIL
 - [BB_JOBS env](project_bb_jobs_env.md) — agents export BB_JOBS=10; old rebase tests expecting --jobs 6 fail
 - [Actor event order](feedback_actor_event_order.md) — actor DOMContentLoaded needs capture:true to beat page init
+- [Switch polarity](feedback_switch_polarity.md) — strip switches are "Remove X" (on = stripped); ADR "on" wording inverts
 - [patches.sh exec bit](project_patches_sh_exec_bit.md) — no exec bit; READMEs calling it directly fail

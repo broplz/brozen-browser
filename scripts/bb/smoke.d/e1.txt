@@ -1,0 +1,9 @@
+# Smoke checklist E1 (strip), ADR-0003 2.9
+about:preferences has the "BROzen" category with five switches (EME, AI, Sync, Mods, Boosts)
+There is no Sync pane in about:preferences
+There is no "Ask AI" entry in any menu
+There is no Zen Marketplace category in about:preferences, and Boosts are present
+Netflix does not play (DRM) on a fresh profile
+With "Remove DRM (EME)" turned off, after Restart Netflix plays
+With "Remove DRM (EME)" turned on, after Restart Netflix does not play
+Browser Console shows no ml, fxaccounts, gZenMods or BBStrip errors in the first 30 s
