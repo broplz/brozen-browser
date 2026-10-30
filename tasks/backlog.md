@@ -41,3 +41,4 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - commit ADR-0001 to docs/adr/0001-little-bb-floating-window.md (status Proposed → Accepted?)
 - Apple Developer account status (E0 signing; approval can take up to two weeks)
 
+- 0022 brand: dev build polls `https://updates.zen-browser.app/updates/browser/Darwin_aarch64-gcc3/unofficial/update.xml` (XML Parsing Error in Browser Console) — point `app.update.url`/surfer update config at BB's own (empty for now) endpoint or disable auto-update in unofficial builds — · S · build ui · depends 0021
