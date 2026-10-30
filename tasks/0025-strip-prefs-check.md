@@ -6,7 +6,7 @@ prefix: e1
 kind: script
 role: developer-hard
 size: M
-status: ready
+status: approved
 base: feat/layer
 branch: task/0025-strip-prefs-check
 depends_on: [0029]
@@ -23,10 +23,10 @@ allowed_paths:
   - scripts/bb/smoke.sh
   - scripts/bb/tests/strip_check_test.sh
 spec: docs/adr/0003-strip-ai-telemetry-sync-eme-mods.md#29-проверка
-returns: 0
-sessions: 1
-reviewed_sha:
-qa_sha:
+returns: 1
+sessions: 0
+reviewed_sha: 92b3f00335e24f4dd3568d2101bf6e1a38083c7d
+qa_sha: 92b3f00335e24f4dd3568d2101bf6e1a38083c7d
 blocked_reason:
 ---
 ## Goal
@@ -174,7 +174,124 @@ cannot hold inside allowed_paths. Teamlead/owner decision needed.
   calls it via /bin/bash).
 
 ## Result
+Return 1 (developer-hard): QA item 1 fixed. ## Review checklist line 6 is reworded to "no open-work markers", and no
+product file changed. `python3 scripts/agents/layer_lint.py tasks/0025-strip-prefs-check.md` →
+`7 files, 248 production lines, 0 fail, 0 warn` (run after commit 178b26c3e).
+
+Session 2 (developer-hard). No new full build: mozconfig is unchanged since session 1's build.
+
+**What changed**
+- `prefs/bb/strip.yaml`: 5 `bb.strip.*` switches + 2.2 (12) + 2.3 (1) + 2.4 (3), all booleans, none locked
+  (session 1; `browser.discovery.enabled` dropped as the re-spec says).
+- `configs/bb/mozconfig:14-15`: `# BB(e1-strip): …` + unconditional `ac_add_options --disable-crashreporter`.
+- `scripts/bb/strip-check.sh`: build / prefs / drift. `build_keys=(MOZ_CRASHREPORTER MOZ_TELEMETRY_REPORTING)`, with
+  the DoD 5 comment right above it. Env `BB_ENGINE_DIR`, `BB_ROOT`. Stops at the first failing part.
+- `scripts/bb/strip-allow.txt`: seeded from the first real drift run (58 names, all from the run's output), grouped
+  with a `#` reason per group.
+- `scripts/bb/smoke.sh`: `/bin/bash …/strip-check.sh >&2 || exit 1` before the checklist loop.
+- `scripts/bb/tests/strip_check_test.sh`: all DoD 8 cases on fixtures.
+- **ADR note:** ADR-0003 2.9 still lists four build keys. The owner decision (b) of 2026-10-31 wins here until the ADR
+  is amended.
+
+**How verified (all run this session)**
+- DoD 1: `grep -n "locked" prefs/bb/strip.yaml` → no output.
+- DoD 2: `layer_lint.py` → `7 files, 172 production lines, 0 fail, 0 warn` (run before the allow-list commit).
+- DoD 3: one `--disable-crashreporter` line (l.15), with the `# BB(e1-strip)` comment at l.14.
+- DoD 4: `BUILD RESULT: OK type=full duration=2167s` (`logs/build-full-20261031-001939.log`, session 1).
+  config.status mtime is 2026-10-31 00:19:54. The first task commit 193425810 is 00:19:09.
+- **R4** (DoD 5), `grep -n "'MOZ_CRASHREPORTER'\|'MOZ_TELEMETRY_REPORTING'\|'MOZ_DATA_REPORTING'\|'MOZ_SERVICES_HEALTHREPORT'" engine/obj-aarch64-apple-darwin/config.status`:
+  ```
+  96:    'MOZ_DATA_REPORTING': '1',
+  118:    'MOZ_SERVICES_HEALTHREPORT': '1',
+  458:    'MOZ_DATA_REPORTING': '1',
+  572:    'MOZ_SERVICES_HEALTHREPORT': '1',
+  ```
+  `MOZ_CRASHREPORTER` and `MOZ_TELEMETRY_REPORTING` are absent. The two `'1'` keys are accepted under owner decision (b).
+- DoD 6: `firefox.js:3828:#include zen.js`. The ff.js lines are: 240/242 `browser.eme.ui.enabled`,
+  1015 `browser.search.visualSearch.featureGate`, 1190 `…smart.enabled`, 1205 `…smart.optin`, 1217
+  `…smart.searchTopicEnabled`, 1219 `…smart.userEnabled`, 2342 `browser.ml.chat.page`, 2343 `….footerBadge`, 2344
+  `….menuBadge`, 2353 `browser.ml.chat.shortcuts.smartwindow`, 2367 `browser.ml.linkPreview.optin`, 2375
+  `browser.ml.pageAssist.enabled`, 2481 `identity.fxaccounts.enabled`, 2547 `media.gmp-widevinecdm.visible`, 2548
+  `media.gmp-widevinecdm.enabled`. All of them come before 3828. `extensions.ml.enabled` is not in firefox.js. It is
+  `modules/libpref/init/all.js:1784`, which is loaded before firefox.js.
+- DoD 7: `scripts/bb/strip-check.sh` → exit 0 with `build OK` / `prefs OK` / `drift OK`. The exec bit is now 100755
+  (commit 901e36c71).
+- DoD 8: `/bin/bash scripts/bb/tests/strip_check_test.sh` → `PASS`.
+- DoD 9: `/bin/bash scripts/bb/tests/smoke_test.sh` → `PASS`. The test file is unchanged.
+- DoD 10: `diff.sh --names` → the 6 allowed_paths only.
+
+**Open questions (reviewer/owner)**
+- **Switch-like names in the allow-list.** The Notes say a switch-like name goes here, not into the allow-list. But
+  DoD 1 forbids adding names to strip.yaml, and DoD 7/9 need drift OK. So I put these names in the allow-list
+  anyway, in their own groups, each marked "sub-switch gated by <master>=false (open question)". Every master
+  switch is already off: `browser.ml.linkPreview.enabled` (Zen `prefs/firefox/ai.yaml:24`),
+  `identity.fxaccounts.enabled` and `media.gmp-widevinecdm.enabled` (strip.yaml). The names:
+  `browser.ml.linkPreview.{blockListEnabled,longPress,shift,shiftAlt}`;
+  `identity.fxaccounts.{commands.remoteTabManagement.enabled,pairing.enabled,telemetry.clientAssociationPing.enabled,
+  telemetry.clientInfoPing.enabled,toolbar.defaultVisible,toolbar.enabled,toolbar.pxiToolbarEnabled{,.monitorEnabled,
+  .relayEnabled,.vpnEnabled}}`; `media.gmp-widevinecdm.{allow-chromium-update,force-chromium-beta,force-chromium-update}`.
+  If any of these should be pinned in strip.yaml instead, that is a follow-up task, and its allow-list line goes away.
+- ADR-0003 2.9 needs an amendment for owner decision (b) (two build keys).
 
 ## Review
+APPROVE
+
+Re-review (return 1):
+1. Spec: QA item 1 (DoD 2) is fixed. `python3 scripts/agents/layer_lint.py tasks/0025-strip-prefs-check.md` →
+   `7 files, 248 production lines, 0 fail, 0 warn` (re-run by reviewer).
+2. Scope: `git diff --stat 92b3f0033 HEAD` → only `tasks/0025-strip-prefs-check.md`. The product files match the
+   previously approved and QA-verified code head 92b3f0033, so the first-round checklist below still holds.
+3. Layer rules, 4. correctness, 5. verification, 6. hygiene: no product change, so the round-1 findings still apply.
+   The ## Result "Return 1" paragraph matches what I see. Nothing new to report.
+
+---
+Round 1:
+
+Checklist:
+1. Spec: DoD 1 entries match exactly (5 switches + 12 + 1 + 3, none locked, `browser.discovery.enabled` dropped per
+   re-spec); DoD 3 line + `# BB(e1-strip)` comment in place; `build_keys` is the two-key array with the DoD 5 comment
+   verbatim (strip-check.sh:16-17); drift prefixes are one array; env overrides `BB_ENGINE_DIR`/`BB_ROOT`; lib.sh sourced;
+   stops at the first failing part. ADR-0003 2.9 vs owner decision (b) is stated in ## Result. Nothing extra.
+2. Scope: 6 files, all in allowed_paths; `smoke_test.sh` untouched (`git diff --stat` empty).
+3. Layer: no Zen/Firefox file, no patch, no layer.yaml entry (S2); prefs only in prefs/bb/; layer_lint → `0 fail, 0 warn`.
+4. Correctness: `set -euo pipefail` in strip-check.sh; `grep | cut || true` handles absent keys under pipefail;
+   multi-line `pref(` calls under the drift prefixes: none in the real firefox.js (grep checked), so js_prefs' one-line
+   regex misses nothing today.
+5. Verification re-run by reviewer: `strip_check_test.sh` → PASS; `strip-check.sh` → the three OK lines, exit 0;
+   `smoke_test.sh` → PASS; exec bit 100755 on strip-check.sh confirmed in the diff header.
+6. Hygiene: English, no open-work markers, no secrets.
+
+Non-blocking notes (no change required):
+1. scripts/bb/smoke.sh:55 — strip-check runs after the browser launch (kept there so smoke_test (g) stays unchanged).
+   If it fails, the launched browser keeps running. Moving it before launch needs a kind: test task for smoke_test (g).
+2. Open questions in ## Result (switch-like names in strip-allow.txt; ADR-0003 2.9 amendment) are for the owner/teamlead.
 
 ## QA
+PASS
+
+Round 2 (after return 1):
+1. `scripts/agents/build.sh full` → `BUILD RESULT: OK type=full duration=1562s` (`logs/build-full-20261031-014827.log`).
+2. `scripts/agents/test.sh lint` → 0 problems; layer_lint → `9 files, 248 production lines, 0 fail, 0 warn` (DoD 2 now holds).
+3. DoD 5: grep of `'MOZ_CRASHREPORTER'|'MOZ_TELEMETRY_REPORTING'` in config.status → no output.
+4. DoD 7: `strip-check.sh` → three OK lines. DoD 8: `strip_check_test.sh` → PASS. DoD 9: `smoke_test.sh` → PASS.
+5. DoD 10: `diff.sh --names` lists only the 6 allowed_paths. DoD 1, 3, 4, 6 unchanged since round 1 (product files identical).
+
+Round 1 (superseded):
+1. DoD 2 failed literally. Repro: `python3 scripts/agents/layer_lint.py tasks/0025-strip-prefs-check.md` →
+   → `FAIL … open-work marker without a task id` on the ## Review checklist line 6 (Hygiene), then
+   `7 files, 248 production lines, 1 fail`. Expected 0 fail. Cause: that line contains the marker word. Product files are clean. Fix: reword that line (e.g. "no open-work markers")
+   and re-run layer_lint. It blocks the merge, since the merge runs layer_lint too. Log: none (stdout only).
+2. All other DoD items verified OK:
+   - DoD 1: no `locked` in strip.yaml (grep gave no output).
+   - DoD 3: `--disable-crashreporter` appears once, at l.15, with the `# BB(e1-strip)` comment at l.14. It sits after
+     `--disable-updater` (l.12) and before the `. …mozconfig.macos` line (l.18).
+   - DoD 4: `scripts/agents/build.sh full` → `BUILD RESULT: OK type=full duration=1979s`
+     (`logs/build-full-20261031-011320.log`).
+   - DoD 5: config.status has no `MOZ_CRASHREPORTER` or `MOZ_TELEMETRY_REPORTING`; `MOZ_DATA_REPORTING` and
+     `MOZ_SERVICES_HEALTHREPORT` are `'1'`, accepted under decision (b).
+   - DoD 6: evidence is in ## Result (I did not re-grep the ff.js lines).
+   - DoD 7: `scripts/bb/strip-check.sh` → exit 0, three OK lines.
+   - DoD 8: `strip_check_test.sh` → PASS.
+   - DoD 9: `smoke_test.sh` → PASS.
+   - DoD 10: `diff.sh --names` lists only the 6 allowed_paths.
+   - `scripts/agents/test.sh lint` (mach lint) → 0 problems, log `logs/test-lint-20261031-014623.log`.
