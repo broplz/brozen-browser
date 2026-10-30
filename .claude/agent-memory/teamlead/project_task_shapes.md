@@ -75,6 +75,10 @@ Planning run 2026-10-30 (2nd) after owner answered 0012:
 - 0016 build.sh preflight (node major vs .nvmrc, gtar) + en-US-packs step after import, S, build ui, stub-PATH test.
   Watch: whether developer may edit scripts/agents/build.sh; teamlead cannot even grep it (hook: "building").
 
+Outcome: 0015 blocked 1st session. .gitignore half done; exec bit denied (update-index --chmod and chmod), and
+`git check-ignore` denied. Escalated. Lesson: never plan a DoD on file modes or check-ignore without first confirming
+the hook allows them; mode changes are owner work until allowed.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
