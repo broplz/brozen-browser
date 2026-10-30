@@ -6,7 +6,7 @@ prefix: layer
 kind: docs
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0020-zen-shortcut-key-warnings
 depends_on: []
@@ -21,7 +21,7 @@ returns: 0
 sessions: 0
 reviewed_sha: e3deab62196806d78a45d3a588e2fe7c1fa97ddb
 qa_sha: e3deab62196806d78a45d3a588e2fe7c1fa97ddb
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Our builds log Browser Console warnings `Key element … is missing "key" and "keycode" attributes
