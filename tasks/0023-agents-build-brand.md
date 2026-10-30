@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0023-agents-build-brand
 depends_on: []
@@ -24,7 +24,7 @@ returns: 0
 sessions: 0
 reviewed_sha: eed0c22d9da8b9f214ed770c74aae059ccc1eda5
 qa_sha: eed0c22d9da8b9f214ed770c74aae059ccc1eda5
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Owner answer to 0021, round 2 (docs/reports/decisions-needed.md, "0021 — owner answers, round 2", item 1): `scripts/agents/build.sh`

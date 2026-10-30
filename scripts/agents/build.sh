@@ -10,13 +10,14 @@
 # printed at the end so nobody needs the raw log. Exit: build exit code; 3 = full build required
 # but this role may not run it; 4 = another build is running;
 # 2 = bad argument or wrong environment (Node major != .nvmrc, gnu-tar missing).
+# BB_BRAND (default bb): surfer brand selected (step `brand`) before every import; skipped by --no-import.
 # After import, the Zen en-US packs are copied (scripts/update_en_US_packs.py).
 # Compatible with macOS bash 3.2: no arrays, no mapfile, no `timeout`.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT" || exit 1
 LOG_DIR="${BB_LOG_DIR:-$ROOT/logs}"; mkdir -p "$LOG_DIR"
-TYPE="auto"; IMPORT=1; JOBS="${BB_JOBS:-6}"
+TYPE="auto"; IMPORT=1; JOBS="${BB_JOBS:-6}"; BRAND="${BB_BRAND:-bb}"
 while [ $# -gt 0 ]; do
   case "$1" in
     auto|ui|full) TYPE="$1" ;;
@@ -102,7 +103,8 @@ CAF=""; command -v caffeinate >/dev/null 2>&1 && CAF="caffeinate -dims"
 
 echo "log: $LOG"
 if [ "$IMPORT" = "1" ]; then
-  step "import" npm run import || RC=$?
+  step "brand" npm run surfer -- set brand "$BRAND" || RC=$?
+  if [ "$RC" = "0" ]; then step "import" npm run import || RC=$?; fi
   if [ "$RC" = "0" ]; then step "en-US-packs" python3 scripts/update_en_US_packs.py || RC=$?; fi
 fi
 if [ "$RC" = "0" ]; then
