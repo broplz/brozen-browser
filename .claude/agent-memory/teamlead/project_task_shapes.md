@@ -79,6 +79,13 @@ Outcome: 0015 blocked 1st session. .gitignore half done; exec bit denied (update
 `git check-ignore` denied. Escalated. Lesson: never plan a DoD on file modes or check-ignore without first confirming
 the hook allows them; mode changes are owner work until allowed.
 
+Planning run 2026-10-30 (3rd) on feat/layer:
+- 0017 triage_log IGNORE_RE + bash test, S, 2 files. Backlog item's .claude/settings.json half → decisions-needed.
+- 0018 pipeline_lib.same_code (patch-id fallback) + merge_task gate, M, py test with config.ROOT=tmp repo, needs_approval.
+- 0019 rebase.sh BB_JOBS + --continue→publish-only on finalize commit, S, new test file, needs_approval.
+- Hook: any Bash command naming merge_task/run_task/run_queue/run_agent (even grep, py_compile) is denied for
+  every role → DoDs check those files via in-test `import`, Read tool for teamlead.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
