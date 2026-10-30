@@ -9,5 +9,6 @@ writable); the reviewer checks that a note is a fact, not a guess.
 ## Build environment
 - Node 22 per `.nvmrc` (`nvm use`); Node 25 breaks `surfer import` (async-icns rmdir).
 - gnu-tar is required (`brew install gnu-tar`; override the binary with `BB_GTAR`).
+- `scripts/agents/build.sh` selects the brand `${BB_BRAND:-bb}` (step `brand`) before import.
 - After `npm run import` the engine has no Zen en-US strings; `scripts/agents/build.sh` copies them
   (`scripts/update_en_US_packs.py`) as its `en-US-packs` step. `build.sh` checks Node and gnu-tar first (exit 2).
