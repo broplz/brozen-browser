@@ -34,8 +34,8 @@ ADR-0003 v2 Решение 1, 2.1–2.4, 2.9 and R4: the strip list becomes data
 to Zen or Firefox files (S2). After this task `prefs/bb/strip.yaml` holds the five `bb.strip.*` switches and the
 stripped defaults of the Firefox-only prefs (names Zen's yaml does not define — 0029 lints that),
 `configs/bb/mozconfig` turns the crash reporter off in dev builds too, `scripts/bb/strip-check.sh` checks build,
-prefs and drift, `smoke.sh` runs it first, and R4 is settled by owner decision (b): the build part requires only
-`MOZ_CRASHREPORTER` to be absent.
+prefs and drift, `smoke.sh` runs it first, and R4 is settled by owner decision (b): the build part requires
+`MOZ_CRASHREPORTER` and `MOZ_TELEMETRY_REPORTING` to be absent.
 
 ## Definition of Done
 1. `prefs/bb/strip.yaml` has exactly these entries, none `locked` (S3: `grep -n "locked" prefs/bb/strip.yaml` → no
@@ -59,11 +59,12 @@ prefs and drift, `smoke.sh` runs it first, and R4 is settled by owner decision (
 4. `scripts/agents/build.sh full` → `BUILD RESULT: OK`. The build re-runs configure (mozconfig changed):
    `engine/obj-aarch64-apple-darwin/config.status` is newer than this task's first commit.
 5. R4 (ADR 2.1, 2.9; owner decision (b), 2026-10-31): after that build
-   `grep -n "'MOZ_CRASHREPORTER'" engine/obj-aarch64-apple-darwin/config.status` → no `'1'` value. The build part of
-   `strip-check.sh` checks `MOZ_CRASHREPORTER` only; `MOZ_DATA_REPORTING` and `MOZ_SERVICES_HEALTHREPORT` stay `'1'`
+   `grep -n "'MOZ_CRASHREPORTER'\|'MOZ_TELEMETRY_REPORTING'" engine/obj-aarch64-apple-darwin/config.status` → no
+   `'1'` value for either. The build part of `strip-check.sh` checks these two keys only (one array);
+   `MOZ_DATA_REPORTING` and `MOZ_SERVICES_HEALTHREPORT` stay `'1'`
    and are accepted, with this comment next to the build check in `strip-check.sh`:
    `# MOZ_DATA_REPORTING, MOZ_SERVICES_HEALTHREPORT: derived from implied project_flags; sending is gated by Zen-locked prefs`.
-   ## Result has a "R4" paragraph quoting the three config.status lines.
+   ## Result has a "R4" paragraph quoting the config.status lines of all four keys.
 6. Every overridden Firefox default actually wins: ## Result quotes `grep -n "#include.*zen" engine/browser/app/profile/firefox.js`
    and the ff.js line of each name from DoD 1 (report 0024 gives them); the include comes after every one of them.
 7. `scripts/bb/strip-check.sh` with no args, after the build → exit 0 and exactly three lines:
@@ -85,8 +86,9 @@ prefs and drift, `smoke.sh` runs it first, and R4 is settled by owner decision (
 - Names and ff.js lines: report `docs/reports/strip-inventory.md` Q4–Q6, Q9. Check each value type against its ff.js
   line (all are booleans per the report; if one is not, stop and write it into ## Handoff instead of guessing).
 - strip-check.sh parts (ADR 2.9):
-  - build: `engine/obj-*/config.status`, format `'KEY': 'value'` (report Q9); `MOZ_CRASHREPORTER` absent or empty
-    (owner decision (b), see DoD 5 for the comment that explains the two accepted keys). No other key is checked.
+  - build: `engine/obj-*/config.status`, format `'KEY': 'value'` (report Q9); `MOZ_CRASHREPORTER` and
+    `MOZ_TELEMETRY_REPORTING` absent or empty; the two names are one array (owner decision (b), see DoD 5 for the
+    comment that explains the two accepted keys). No other key is checked.
   - prefs: generated `engine/browser/app/profile/zen.js` (`pref("name", value[, locked]);`, `#if` blocks kept,
     report Q9) — every entry of `strip.yaml` is present with the same value. Skip lines starting with `#`.
   - drift: every `browser.ml.*`, `browser.tabs.groups.smart.*`, `identity.fxaccounts.*`, `media.gmp-widevinecdm.*`,
@@ -109,8 +111,8 @@ prefs and drift, `smoke.sh` runs it first, and R4 is settled by owner decision (
   see docs/reports/decisions-needed.md. DoD 1 updated: `browser.discovery.enabled` dropped (Zen sets it), the
   session-1 deviation is accepted. On the answer: option (b) → re-spec here (one build_keys line, DoD 5 reworded,
   seed strip-allow.txt, smoke_test run); option (a) → new developer-hard task for the patch, this one depends on it.
-- Owner decision 2026-10-31: option (b). Session 2 picks up from ## Handoff: `build_keys` → `MOZ_CRASHREPORTER` only
-  plus the DoD 5 comment, run `strip-check.sh` against the session-1 objdir (DoD 4 build already OK; no new full build
+- Owner decision 2026-10-31: option (b). Session 2 picks up from ## Handoff: `build_keys` → `MOZ_CRASHREPORTER`,
+  `MOZ_TELEMETRY_REPORTING` plus the DoD 5 comment, run `strip-check.sh` against the session-1 objdir (DoD 4 build already OK; no new full build
   unless mozconfig changes), seed `strip-allow.txt`, run `smoke_test.sh`, fill ## Result. ADR-0003 2.9 still lists the
   four keys; the owner decision here wins until the ADR is amended — say so in ## Result.
 
