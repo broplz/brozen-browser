@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0023-agents-build-brand
 depends_on: []
@@ -22,8 +22,8 @@ allowed_paths:
 spec: docs/reports/decisions-needed.md
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: eed0c22d9da8b9f214ed770c74aae059ccc1eda5
+qa_sha: eed0c22d9da8b9f214ed770c74aae059ccc1eda5
 blocked_reason:
 ---
 ## Goal
@@ -68,7 +68,29 @@ themselves; build.sh is the only place that does it. Task 0021 (the brand itself
 ## Handoff
 
 ## Result
+Round 1:
+- build.sh: `BRAND="${BB_BRAND:-bb}"`; in the import branch, step `brand` (`npm run surfer -- set brand "$BRAND"`) runs first, import only if RC=0, then en-US-packs, build. `--no-import` leaves the brand untouched. Header comment documents `BB_BRAND`.
+- New `scripts/agents/tests/build_brand_test.sh` (cases a–d); docs/notes/README.md line added; rebase.sh follow-up in backlog "Found by agents".
+- Verified: `bash -n build.sh` clean; build_brand_test.sh PASS; build_preflight_test.sh PASS. No real build (build: none). diff.sh --names not run separately; only allowed paths were edited.
+- Known window: brand `bb` is added to surfer.json by 0021; until it merges, a default build.sh fails at the `brand` step.
 
 ## Review
+APPROVE
+1. Spec: build.sh:20 `BRAND="${BB_BRAND:-bb}"` next to JOBS; build.sh:106-108 order brand → import (RC-guarded) → en-US-packs → build, exactly as the Notes ask. No surfer.json check was added, which is correct. The header comment (build.sh:13) and the docs/notes line (DoD 4, 5) are present.
+2. Scope: the diff covers build.sh, the new test, docs/notes/README.md, tasks/backlog.md:43 (the rebase.sh follow-up) and the task file. All are in allowed_paths. build_preflight_test.sh is untouched.
+3. Layer: no Zen/Firefox files and no prefs are touched. layer_lint: 0 fail, 0 warn.
+4. Correctness: `--no-import` skips the whole IMPORT branch, brand included. A failed brand step sets RC, which blocks import and the build. The test is bash-3.2 safe (no arrays), uses mktemp plus trap cleanup, and stubs caffeinate. `VAR=x run_build` exports to the function under bash, which is fine.
+5. Verification: I re-ran `bash scripts/agents/tests/build_brand_test.sh` → PASS and `build_preflight_test.sh` → PASS. `git diff --stat` shows only allowed paths. ## Result names the known window (bb brand is missing until 0021 lands).
+6. Hygiene: nothing blocking. Nit only: build_brand_test.sh is committed as 100644, so it runs only via `bash …`, which matches the DoD.
 
 ## QA
+PASS
+1. `bash -n scripts/agents/build.sh` → no output.
+2. `bash scripts/agents/tests/build_brand_test.sh` → `PASS`.
+3. `bash scripts/agents/tests/build_preflight_test.sh` → `PASS`.
+4. build.sh:13 header documents `BB_BRAND` (default bb); build.sh:20 `BRAND="${BB_BRAND:-bb}"`.
+5. docs/notes/README.md:12 has the brand line.
+6. `diff.sh --names` lists build.sh, the new test, docs/notes/README.md (all allowed); backlog line 43 holds the rebase.sh follow-up.
+7. `test.sh lint` → OK, 0 problems; layer_lint 0 fail, 0 warn (log: logs/test-lint-20261030-180838.log). Build type none, so no build was run.
+
+For the human: the default build.sh fails at the `brand` step until 0021 adds brand `bb` to surfer.json.
