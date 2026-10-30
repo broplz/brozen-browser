@@ -6,7 +6,7 @@ prefix: e0
 kind: feature
 role: developer-hard
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0021-brand-bb
 depends_on: [0023]
@@ -23,7 +23,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 03e08636d6274357d4be1ca95eaa851e81dba1db
 qa_sha: 03e08636d6274357d4be1ca95eaa851e81dba1db
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0002 §Границы: branding lives in `configs/branding/bb/` + brand `bb` in `surfer.json` (class 2 plain edit). The owner copied

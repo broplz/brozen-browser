@@ -43,7 +43,10 @@ hooks:
 #   - file: <repo-relative path>
 #     epic: <layer | eN-slug>
 #     why: <one-line reason>
-edits: []
+edits:
+  - file: surfer.json
+    epic: e0
+    why: adds brand bb (BROzen BROwser, short BB) and sets vendor broplz; ids stay Zen's
 
 # Edits to Zen's own .patch files (only with allow_zen_patch, marker inside the hunk).
 # Entry schema:

@@ -1,6 +1,6 @@
 {
   "name": "Zen Browser",
-  "vendor": "Zen OSS Team",
+  "vendor": "broplz",
   "appId": "zen",
   "binaryName": "zen",
   "version": {
@@ -44,6 +44,16 @@
         "github": {
           "repo": "zen-browser/desktop"
         }
+      }
+    },
+    "bb": {
+      "_bb": "BB(e0): BB brand, ADR-0002 Границы",
+      "backgroundColor": "#282A33",
+      "brandShorterName": "BB",
+      "brandShortName": "BB",
+      "brandFullName": "BROzen BROwser",
+      "release": {
+        "displayVersion": "1.23.4b"
       }
     }
   },
