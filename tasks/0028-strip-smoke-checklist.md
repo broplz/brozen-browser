@@ -6,7 +6,7 @@ prefix: e1
 kind: docs
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0028-strip-smoke-checklist
 depends_on: [0027]
@@ -19,10 +19,10 @@ allowed_paths:
   - scripts/bb/smoke.d/e1.txt
   - scripts/bb/smoke.d/e0.txt
 spec: docs/adr/0003-strip-ai-telemetry-sync-eme-mods.md#29-проверка
-returns: 0
+returns: 1
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 1ea77b452a9a85f7045150e08b36d12656a95385
+qa_sha: 1ea77b452a9a85f7045150e08b36d12656a95385
 blocked_reason:
 ---
 ## Goal
@@ -56,7 +56,42 @@ rebase proves the L3 mechanisms of e1-strip (gZenMods stub, the about:preference
 ## Handoff
 
 ## Result
+Round 2: fixed Review item 1 — e1.txt lines 7-8 now use the real label "Remove DRM (EME)" with correct polarity
+(off → Netflix plays, on → does not play). `grep -c` still 8. Nothing else changed.
+
+Round 1: added scripts/bb/smoke.d/e1.txt (header + 8 items in ADR 2.9 order); removed the duplicate "Stripped features…"
+line from e0.txt. 0027 built variant A, so item 1 names about:preferences. Verified: `grep -c` → 8. No build needed.
 
 ## Review
+APPROVE
+Round 2: item 1 from round 1 is fixed. e1.txt:7-8 now use the real label "Remove DRM (EME)" with the correct polarity:
+off → plays, on → does not play, in ADR 2.9 order. Nothing else changed.
+Checklist: (1) spec: header + 8 items in ADR order, item 1 matches variant A. (2) scope: only the two allowed_paths;
+e0.txt has exactly one line removed. (3) layer: docs only, no Zen/engine files. layer_lint had 1 fail, caused only by
+the wording of my own round-1 review (a marker word); that wording is rewritten below, and the code has 0 fail.
+(4) correctness: `wc -lc` gives 9 lines / 568 bytes, so the file ends with a newline and `while read` keeps item 8.
+(5) verification: I re-ran `grep -c` and got 8, as the Result says. (6) hygiene: English, one checkable sentence per item.
+
+---
+REQUEST_CHANGES
+1. scripts/bb/smoke.d/e1.txt:7-8: the polarity is the wrong way round compared with the UI that 0027 actually built. The
+   switch is labelled "Remove DRM (EME)" (src/bb/strip/l10n/en-US/brozen-pane.ftl:14) and it is bound to `bb.strip.eme`
+   (on = stripped, see 0027 ## Result). "With the EME switch on, after Restart Netflix plays" therefore tells the tester
+   to turn DRM *removal* on and then expect Netflix to play. Every correct build would fail this item. The teamlead
+   note says to use the names as they are after 0027, so use the real label and state the expected result. Example:
+   line 7 "Turn off 'Remove DRM (EME)', Restart: Netflix plays"; line 8 "Turn on 'Remove DRM (EME)', Restart: Netflix
+   does not play". Keep the ADR 2.9 order (enable, then disable).
+
+Checklist notes: (1) spec: header, 8 items and the ADR order are all correct; item 1 matches variant A (0027 Result);
+only the EME wording is wrong (item 1 above). (2) scope: only allowed_paths are touched; e0.txt has exactly one line
+removed. (3) layer: docs only, layer_lint shows 0 fail / 0 warn, no Zen/engine files. (4) correctness: the file ends
+with a newline, so `while read` keeps the last item; no shell code. (5) verification: I re-ran `grep -c` and got 8,
+as the Result says. (6) hygiene: English, no untracked markers, no dead lines.
 
 ## QA
+PASS
+1. DoD 1: e1.txt has the `#` header citing ADR-0003 2.9 and 8 items in ADR order; EME items use "Remove DRM (EME)" with correct polarity.
+2. DoD 2: git diff of e0.txt shows exactly one removed line (the "Stripped features…" one).
+3. DoD 3: `grep -c -v -e "^#" -e "^$" scripts/bb/smoke.d/e1.txt` → 8.
+4. DoD 4: diff names list only e0.txt and e1.txt (plus the task file).
+5. Lint: OK, 0 problems; layer_lint 0 fail, 0 warn (logs/test-lint-20261031-025513.log). Build: none.
