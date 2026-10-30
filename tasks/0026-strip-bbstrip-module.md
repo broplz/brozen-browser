@@ -6,7 +6,7 @@ prefix: e1
 kind: feature
 role: developer
 size: M
-status: ready
+status: approved
 base: feat/layer
 branch: task/0026-strip-bbstrip-module
 depends_on: [0025]
@@ -24,8 +24,8 @@ allowed_paths:
 spec: docs/adr/0003-strip-ai-telemetry-sync-eme-mods.md#27-панель-brozen--инъекция-из-своего-кода
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 1e83525efeb4e073ff92445087474334dd7628b0
+qa_sha: 1e83525efeb4e073ff92445087474334dd7628b0
 blocked_reason:
 ---
 ## Goal
@@ -88,7 +88,50 @@ flips a translated pref does not survive the next BB start); with `bb.strip.mods
 ## Handoff
 
 ## Result
+Round 1.
+- `src/bb/strip/BBStrip.mjs`: one TABLE (switch → rows), one `applyRows` loop (stripped value when on, inverse when off;
+  equals default-branch value → `clearUserPref`, else set; default branch read-only), exported `SWITCHES` `[{pref, restart}]`
+  (restart for eme, sync), observer on `bb.strip.`, table applied once at import, `initWindow(win)` sets `bb-strip-boosts`
+  on the root element (= `#main-window`) and, with `bb.strip.mods`, replaces `win.gZenMods` with a stub built from
+  `MODS_STUB_MEMBERS` (name + `file:line` of user + empty value).
+- gZenMods timing (R1): the stock instance's `init` is bound to `MozBeforeInitialXULLayout` in the constructor
+  (`ZenCommonUtils.mjs:80`), so it still runs after BBStartup replaced the instance. It reads mods only through the public
+  `getMods` / `checkForModsUpdates` (`ZenMods.mjs:497,110,522`), so `initWindow` no-ops those two on the stock instance
+  (no Zen edit). Residual: if `zen-themes.css` already exists in a profile, `#insertStylesheet` (ZenMods.mjs:514) still
+  loads it once; a fresh BB profile has none.
+- `strip.css` (boost button + Boosts section of site-data panel, Library Boosts tab), linked in `bb-assets.inc.xhtml`,
+  registered with BBStrip.mjs in `jar.inc.mn`; BBStartup imports BBStrip and calls `initWindow(window)`.
+- AI row: the 7 `browser.ml.*` names of Zen's ai.yaml per DoD + the 12 of strip.yaml; `browser.preferences.aiControls`
+  (8th line of ai.yaml) left out as the DoD says 7 — open question for the owner.
+- Verified: `build.sh ui` OK; `test.sh lint` OK; layer_lint 0 fail. No runtime check (needs_approval false; 0027/0028).
+  `grep lock` on BBStrip.mjs: no output.
 
 ## Review
+APPROVE
+
+Checklist:
+- Spec: DoD 1–6 are met. One TABLE with one `applyRows` loop. The 19 AI names match `ai.yaml:6-24` plus the 12 AI names in `strip.yaml`. The sync, eme and boosts rows match `strip.yaml`. The default branch is only read, and nothing is locked. `SWITCHES` marks restart for eme and sync, which matches ADR line 96. The module is imported once in the shared global, with one observer and one apply at import. The stub member `file:line` refs match the grep of `ZenModsMarketplaceParent.sys.mjs` and `zen-settings.js`. The CSS selectors exist (`site-data.inc:82-86,102`, `ZenLibrary.mjs:1015-1017`).
+- Scope: `--names` lists only the 5 files in allowed_paths. No Zen or Firefox file changed, and there is no layer.yaml entry (S2).
+- Layer: layer_lint reports 0 fail and 0 warn. Prefs: only names that already exist are used. Pref-off path: `bb.strip.*=false` clears back to the default branch (F2).
+- Correctness: the observer is process-wide, so never removing it is fine. The stock instance's `init` (`ZenMods.mjs:497-522`) only reaches mods through `getMods` and `checkForModsUpdates`, and both are no-ops now. The residual (`#insertStylesheet` at :514 still loads an existing `zen-themes.css`) is disclosed in ## Result.
+- Verification: the lint claim was reproduced here. The build and test.sh lint runs are left to qa.
+- Hygiene: no untracked follow-up markers, no secrets, everything in English.
+
+Non-blocking notes (fix in 0027 or a later e1 task):
+1. src/bb/strip/BBStrip.mjs:66: the stub gives `updatePref: "bb.strip.mods"`, so `zen-settings.js:41` now observes the BB switch and rebuilds its list every time the switch is toggled. That is a BB pref inside Zen's settings, and it breaks the "empty value of its type" rule in DoD 5. Better: keep the stock name (`stock.updatePref`). Nothing toggles it once `triggerModsUpdate` is a no-op. That would also remove the `property` special case in `buildModsStub`.
+2. src/bb/strip/BBStrip.mjs:128: `win.gZenMods ?? {}` is a just-in-case fallback that writes to a throwaway object. BBStartup always runs after gZenMods exists (`ZenPreloadedScripts.js:32`), so this should be `win.gZenMods`.
+3. Open question for 0027: `bb.strip.mods` has `restart: false` (as the ADR says), but the stub is only installed in `initWindow`. Toggling the switch does not change windows that are already open. Either the pane says "new windows / restart", or the ADR should mark Mods as restart-only.
 
 ## QA
+PASS
+
+1. DoD 7: `build.sh ui` → `BUILD RESULT: OK` (log logs/build-ui-20261031-022015.log). `test.sh lint` → `TEST RESULT: OK`, 0 problems (logs/test-lint-20261031-022046.log).
+2. DoD 8: layer_lint → 6 files, 179 production lines, 0 fail, 0 warn.
+3. DoD 9: `diff.sh --names` lists only BBStartup.mjs, bb-assets.inc.xhtml, jar.inc.mn, BBStrip.mjs, strip.css — all in allowed_paths.
+4. DoD 1: one TABLE, one applyRows loop. Names match: 7 `ai.yaml:6-24` names (the 8th, `browser.preferences.aiControls`, is left out as the DoD says 7), the 12 AI names of strip.yaml, and the sync/eme/boosts rows; mods has empty rows.
+5. DoD 2: `grep getDefaultBranch` → one read-only use (line 88); `grep lock` → no output. Helper clears the user pref when the wanted value equals the default, else sets it.
+6. DoD 3: `SWITCHES` is `[{pref, restart}]`, restart true for sync and eme only.
+7. DoD 4–6: observer on `bb.strip.` plus apply once at import. `MODS_STUB_MEMBERS` is one array with `file:line` per entry. `bb-strip-boosts` attribute is set on the root element. strip.css is linked in bb-assets and registered in jar.inc.mn (diff).
+8. Not run: runtime behaviour (needs_approval false; covered by 0027/0028). Reviewer's non-blocking notes 1–3 stand for 0027.
+
+For the human: none.
