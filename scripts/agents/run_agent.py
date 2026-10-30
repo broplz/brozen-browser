@@ -7,8 +7,13 @@
 The driver (run_task.py / run_queue.py) calls this; a human can too. The session is fresh:
 the only state an agent gets is the task file, the branch and the rule-sets in its system prompt.
 Output: the result JSON goes to logs/agent-<task>-<role>-<stamp>.json, one line to
-logs/agent-sessions.jsonl, and a RESULT line on stderr. Exit 0 even when the agent failed —
-the task file's status is what the driver reads next.
+logs/agent-sessions.jsonl, and a RESULT line on stderr.
+
+Exit 0 whenever a session ran, however it ended — the agent set `blocked`, hit --max-turns or
+--max-budget-usd, timed out, or `claude` itself exited nonzero: that outcome is in the task file
+and in agent-sessions.jsonl (`subtype`, `is_error`), which is what the driver reads next.
+Nonzero only when no session started: 1 for a rebaser without a Zen tag, an unknown task
+(FileNotFoundError) or `claude` missing from PATH; 2 for bad arguments (argparse).
 """
 import argparse
 import json
@@ -107,7 +112,7 @@ def main():
     size = tf.get("size", "M") if tf else "M"
     turns = a.max_turns or config.turns_for(role, size)
     budget = a.budget or config.budget_for(role, size)
-    tag = a.tag or (tf.get("zen_tag").strip() if tf else "")
+    tag = a.tag or (str(tf.get("zen_tag") or "").strip() if tf else "")
     if role == "rebaser" and not tag:
         pl.die("rebaser needs a Zen tag: set `zen_tag:` in the task frontmatter or pass --tag")
     prompt = build_prompt(role, tf, a.mode, a.prompt, a.session, tag)
