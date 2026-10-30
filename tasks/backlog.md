@@ -27,6 +27,8 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - 0019 layer: `rebase.sh` — `do_build` reads `BB_JOBS` (hardcoded `--jobs 6`); define `--continue` after a failed `publish` (finalize commit already on rebase/<tag>: no second commit, re-run publish only) — · S · build none · depends 0011
 - 0020 layer: Browser Console `Key element … missing "key"/"keycode"` warnings for Zen shortcuts (ShortcutUtils.sys.mjs) — find out whether upstream Zen 1.23.4b has them too (official build) or it is our l10n/init; report only — · S · build none · role developer
 - 0021 brand: BB brand instead of `unofficial`/Nightly — surfer brand config under `configs/branding/` modelled on Zen's, placeholder name "BROzen BROwser", logo reuse allowed for now — · M · build full · needs_approval
+- 0022 brand: dev build polls `https://updates.zen-browser.app/updates/browser/Darwin_aarch64-gcc3/unofficial/update.xml` (XML Parsing Error in Browser Console) — point `app.update.url`/surfer update config at BB's own (empty for now) endpoint or disable auto-update in unofficial builds — · S · build ui · depends 0021
+- 0023 agents: `scripts/agents/build.sh` reads `BB_BRAND` (default `bb`) and passes it to surfer build/package; document in README — · S · build none
   - not planned by teamlead (2026-10-29): dry-run mechanics not in the ADR; see docs/reports/decisions-needed.md
   - planned 2026-10-30 (3rd run): 0017 = triage_log.py half only (settings.json half is owner work, decisions-needed), 0018, 0019 (both needs_approval)
   - not planned by teamlead (2026-10-30): brand selection in build.sh, binary asset copy, identity ids — see docs/reports/decisions-needed.md
@@ -42,4 +44,3 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - commit ADR-0001 to docs/adr/0001-little-bb-floating-window.md (status Proposed → Accepted?)
 - Apple Developer account status (E0 signing; approval can take up to two weeks)
 
-- 0022 brand: dev build polls `https://updates.zen-browser.app/updates/browser/Darwin_aarch64-gcc3/unofficial/update.xml` (XML Parsing Error in Browser Console) — point `app.update.url`/surfer update config at BB's own (empty for now) endpoint or disable auto-update in unofficial builds — · S · build ui · depends 0021
