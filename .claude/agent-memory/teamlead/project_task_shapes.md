@@ -96,6 +96,12 @@ Planning run 2026-10-30 (4th): only 0020 and 0021 lacked files (only 2 left with
 Planning run 2026-10-30 (5th): nothing to plan. Every ## Next item has a file except 0021, whose escalation is still
 unanswered (no owner commit since a8eac5456). Outcome: 0017 done on the first try (S, 2 files).
 
+Planning run 2026-10-30 (6th): nothing to plan. The owner answered 0021's content (names, logo reuse, no updates,
+separate profile dir) but not the mechanics: how build.sh selects the brand, and who copies the assets. A separate
+profile dir means the ids change, and that needs an E0 ADR. Re-escalated. 0022 sits under "For the owner", not ## Next,
+so it was not planned. Hook: any Bash command naming surfer.json (even grep) is blocked → use Read.
+Lesson: an answer to "what" is not an answer to "how". Check every listed blocker before planning.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
