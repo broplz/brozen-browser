@@ -86,6 +86,13 @@ Planning run 2026-10-30 (3rd) on feat/layer:
 - Hook: any Bash command naming merge_task/run_task/run_queue/run_agent (even grep, py_compile) is denied for
   every role → DoDs check those files via in-test `import`, Read tool for teamlead.
 
+Planning run 2026-10-30 (4th): only 0020 and 0021 lacked files (only 2 left without one, not 3).
+- 0020 report-only investigation (docs/reports/0020-*.md), S, build none, needs_approval for the [human] official-build
+  check. Fixed headings plus a `Verdict: upstream|ours|unknown` line keep the DoD machine-checkable. Watch: will a
+  docs-only investigation get done on the first try?
+- 0021 brand escalated: brand selection (build.sh passes no brand), binary icon copy (agents can't cp), app ids.
+  Lesson: any task that has to copy binary assets is owner work, or needs a cp allowance first.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
