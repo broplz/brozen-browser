@@ -5,7 +5,8 @@
 
 Gates (all deterministic, zero tokens):
   status approved · ## Review starts with APPROVE · ## QA starts with PASS ·
-  reviewed_sha == qa_sha == last code commit on the branch (tasks/ and logs/ commits don't count) ·
+  reviewed_sha == qa_sha == last code commit on the branch (tasks/ and logs/ commits don't count),
+  or, after a clean rebase, the same `git patch-id --stable` of the code diff against the base ·
   layer_lint.py passes · if the task needs approval, tasks/approvals.txt has `<id> approved`.
 Exit: 0 merged · 2 gate failed (task set to blocked with the reason) · 3 waiting for approval.
 """
@@ -34,7 +35,7 @@ def gates(tf, branch):
         sha = tf.get(key, "").strip()
         if not sha:
             errors.append(f"{key} is empty")
-        elif not code.startswith(sha) and not sha.startswith(code[:7]):
+        elif not pl.same_code(pl.task_base(tf), sha, branch):
             errors.append(f"{key} {sha[:10]} != code head {code[:10]} (code changed after the verdict)")
     lint = subprocess.run([sys.executable, os.path.join(HERE, "layer_lint.py"), tf.path, "--base", pl.task_base(tf), "--branch", branch],
                           cwd=config.ROOT, capture_output=True, text=True, check=False)
