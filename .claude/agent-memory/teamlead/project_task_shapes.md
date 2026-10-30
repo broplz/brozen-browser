@@ -112,6 +112,9 @@ Planning run 2026-10-30 (7th) after owner round 2 on 0021:
 
 Planning run 2026-10-30 (8th): nothing to plan. Files exist for all of 0001-0023 on ## Next; no new items.
 
+Planning run 2026-10-30 (9th): nothing to plan again. Outcomes: 0015, 0016, 0018, 0019, 0020 (docs-only report),
+0023 done. 0021/0022 ready, 0012 still draft (owner sets ready).
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
