@@ -12,7 +12,7 @@ branch: task/0030-strip-pane-enable-semantics
 depends_on: [0028]
 build: ui
 tests: []
-needs_approval: false
+needs_approval: true
 allow_zen_patch: false
 zen_tag:
 allowed_paths:
