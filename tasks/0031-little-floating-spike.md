@@ -31,9 +31,10 @@ blocked_reason:
 ADR-0001 v2, Решение 1, variant C′ (plan item e3-01). After this task the BB patch
 `src/bb/patches/e3-little-bb/floating-window/floating-window.patch` with its `README.md` adds a chrome-only window
 feature `bbfloating`: `nsWindowWatcher` maps it to `nsIWebBrowserChrome::CHROME_BB_FLOATING`, `nsAppShellService`
-maps the flag to `InitData.mBBFloating`, and `nsCocoaWindow::CreateNativeWindow` gives such a window the MediaPiP
-configuration (nonactivating panel, full-screen auxiliary, no full-screen primary) plus `NSFloatingWindowLevel` and
-`MoveToActiveSpace`, without `CanJoinAllSpaces`. The window then floats over another app's native fullscreen Space
+maps the flag to `InitData.mBBFloating`, and `nsCocoaWindow::CreateNativeWindow` adds only `NSFloatingWindowLevel`
+and `MoveToActiveSpace` for it, without `CanJoinAllSpaces`. Little BB is opened with `mediapip,bbfloating`: the
+nonactivating panel, full-screen auxiliary and no full-screen primary come from the stock `mediapip` branch and are
+not duplicated. The window then floats over another app's native fullscreen Space
 (F1), stays on the Space where it was opened (F2), does not switch Space (F3) and never becomes its own fullscreen
 window (F6). `alwaysontop` and `mediapip` keep their semantics (N2); on other platforms the flag is ignored. The task
 also measures focus/activity of the new window against the stock PiP player (risk R8) in
@@ -52,13 +53,17 @@ also measures focus/activity of the new window against the stock PiP player (ris
    - `xpfe/appshell/nsAppShellService.cpp` — `JustCreateTopWindow`: `CHROME_BB_FLOATING` → `mBBFloating = true`,
      next to the `CHROME_MEDIA_PIP` line (~:504);
    - `widget/cocoa/nsCocoaWindow.mm` — `CreateNativeWindow`, next to the MediaPiP block (~:5389): for `mBBFloating`
-     `NSWindowStyleMaskNonactivatingPanel`, `FullScreenAuxiliary | FullScreenDisallowsTiling`, no
-     `FullScreenPrimary` (as MediaPiP, ~:5420–5436), plus level `NSFloatingWindowLevel`, plus
-     `NSWindowCollectionBehaviorMoveToActiveSpace`, and never `CanJoinAllSpaces`.
+     only `mWindow.level = NSFloatingWindowLevel` and
+     `collectionBehavior |= NSWindowCollectionBehaviorMoveToActiveSpace`. `NonactivatingPanel`,
+     `FullScreenAuxiliary | FullScreenDisallowsTiling` and the `FullScreenPrimary` exclusion (~:5434) come from
+     `mediapip` and are not duplicated.
 3. `scripts/bb/patches.sh check` → OK for `e3-little-bb/floating-window`, i.e. the patch applies both to clean Firefox
    and to Firefox + Zen's patches of the same files.
 4. `alwaysontop` and `mediapip` branches unchanged: `grep -nE "AlwaysOnTop|alwaysontop|MediaPiP|CHROME_MEDIA_PIP|CanJoinAllSpaces" src/bb/patches/e3-little-bb/floating-window/floating-window.patch`
-   shows only context lines (no line starting with `+` or `-` among them).
+   shows only context lines (no line starting with `+` or `-` among them). The nsCocoaWindow.mm hunks add neither
+   `CanJoinAllSpaces` nor `FullScreenPrimary`:
+   `grep -nE "^\+.*(CanJoinAllSpaces|FullScreenPrimary)" src/bb/patches/e3-little-bb/floating-window/floating-window.patch`
+   → no output.
 5. `scripts/agents/build.sh full` → `BUILD RESULT: OK`.
 6. `scripts/agents/test.sh lint` → OK; `python3 scripts/agents/layer_lint.py tasks/0031-little-floating-spike.md` → 0 fail.
 7. `scripts/agents/diff.sh tasks/0031-little-floating-spike.md --names` lists only files under
@@ -69,7 +74,7 @@ also measures focus/activity of the new window against the stock PiP player (ris
    while the window floats over another app's fullscreen Space, before and after a click into the window — and
    describes the difference (material for R8 and hypotheses (а)/(б)/(в) of Решение 1).
 9. [human] In the built BB, Browser Console:
-   `setTimeout(() => window.openDialog("chrome://browser/content/browser.xhtml","_blank","chrome,dialog=no,resizable,titlebar,bbfloating,suppressinitialfullscreen,width=900,height=700"), 5000)`,
+   `setTimeout(() => window.openDialog("chrome://browser/content/browser.xhtml","_blank","chrome,dialog=no,resizable,titlebar,mediapip,bbfloating,suppressinitialfullscreen,width=900,height=700"), 5000)`,
    then within 5 s switch to a Space with another app in native fullscreen. All five must hold:
    1. the window appears over the fullscreen app (F1);
    2. swiping to another Space — the window does not follow (F2);
@@ -98,8 +103,6 @@ also measures focus/activity of the new window against the stock PiP player (ris
 - `src/bb/layer.yaml`: per ADR-0002 a patch under `src/bb/patches/` is registered by its directory and README;
   `layer.yaml` gets an entry only for hooks, Zen edits or `zen_patches`. Expected: no change; if you do add one,
   say why in ## Result.
-- `suppressinitialfullscreen` stays in the test features (ADR, F6); `mediapip` is intentionally absent from the
-  [human] command: `bbfloating` reproduces the MediaPiP native configuration itself.
 - The [human] check needs a full build in this engine: run it once the build is green, before review.
 - If DoD 9 is red: no workarounds without the owner's decision — neither C″ (adding `CanJoinAllSpaces` and removing
   it after the first `orderFront`) nor E4 (`bb-little.xhtml`), nor `canBecomeKeyWindow`/`NSPanel` subclassing
