@@ -6,6 +6,7 @@ import os
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 LOG_DIR = os.environ.get("BB_LOG_DIR", os.path.join(ROOT, "logs"))
+SESSIONS_LOG = os.path.join(LOG_DIR, "agent-sessions.jsonl")
 TASK_DIR = os.path.join(ROOT, "tasks")
 BACKLOG = os.path.join(TASK_DIR, "backlog.md")
 APPROVALS = os.path.join(TASK_DIR, "approvals.txt")

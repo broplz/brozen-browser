@@ -16,11 +16,10 @@ import run_queue
 
 
 def sessions(days):
-    path = os.path.join(config.LOG_DIR, "agent-sessions.jsonl")
     since = datetime.datetime.now() - datetime.timedelta(days=days)
     rows = []
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(config.SESSIONS_LOG, encoding="utf-8") as f:
             for line in f:
                 try:
                     r = json.loads(line)

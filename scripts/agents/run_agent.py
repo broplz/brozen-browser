@@ -14,6 +14,7 @@ Exit 0 whenever a session ran, however it ended — the agent set `blocked`, hit
 and in agent-sessions.jsonl (`subtype`, `is_error`), which is what the driver reads next.
 Nonzero only when no session started: 1 for a rebaser without a Zen tag, an unknown task
 (FileNotFoundError) or `claude` missing from PATH; 2 for bad arguments (argparse).
+run_task.py tells "started" by this session's line in agent-sessions.jsonl, not by the rc.
 """
 import argparse
 import json
@@ -187,7 +188,7 @@ def main():
         "session_id": data.get("session_id"), "denials": len(data.get("permission_denials") or []),
         "terminal_reason": data.get("terminal_reason"), "log": pl.rel(out_path),
     }
-    with open(os.path.join(config.LOG_DIR, "agent-sessions.jsonl"), "a", encoding="utf-8") as f:
+    with open(config.SESSIONS_LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps(summary) + "\n")
     pl.log(f"RESULT role={role} task={tid} subtype={summary['subtype']} turns={summary['turns']} "
            f"cost=${summary['cost_usd']} duration={dur}s denials={summary['denials']} log={summary['log']}")
