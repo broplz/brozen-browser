@@ -28,6 +28,7 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - 0020 layer: Browser Console `Key element … missing "key"/"keycode"` warnings for Zen shortcuts (ShortcutUtils.sys.mjs) — find out whether upstream Zen 1.23.4b has them too (official build) or it is our l10n/init; report only — · S · build none · role developer
 - 0021 brand: BB brand instead of `unofficial`/Nightly — surfer brand config under `configs/branding/` modelled on Zen's, placeholder name "BROzen BROwser", logo reuse allowed for now — · M · build full · needs_approval
   - not planned by teamlead (2026-10-29): dry-run mechanics not in the ADR; see docs/reports/decisions-needed.md
+  - (note above refers to 0012) planned 2026-10-30 after owner answers: tasks/0012 is `draft` until the owner sets `ready`; 0015 role rebaser (hook: only rebaser may name rebase.sh/smoke.sh); 0016 scoped to build.sh, rebase.sh/driver en-US step left for "Found by agents"
 
 ## Found by agents
 (moved to ## Next: 0015)

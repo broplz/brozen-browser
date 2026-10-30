@@ -13,3 +13,5 @@ The owner answers inline, in the ADR or in the task file, and deletes the line.
 2. Stop before publish: run with `BB_POST_STEPS` without `publish`; tag `bb/base/1.23.4b` is not touched.
 3. Install must not touch /Applications: `BB_APPS_DIR=/tmp/bb-apps`.
 4. The rebaser agent builds `main'` (worktree + the layer on 1.23.3b); task needs_approval, owner approves the task file before the run.
+
+- 0012 (task file written, status `draft` per answer 4 — set `ready` after reading it): worktrees share refs, and rebase.sh needs a branch, so the run creates temporary `dryrun/main`, `rebase/1.23.4b` and tag `bb/base/1.23.3b` in this repo's refs (all deleted at the end, DoD 5); `smoke` is excluded from `BB_POST_STEPS` (interactive, no tty for an agent) and left to you as DoD 9; no separate Firefox 158.0 build of `main'` (step 6 replaces engine anyway). Object to any of the three by editing the task's Notes.

@@ -68,6 +68,13 @@ Outcome: 0010 done.
 Planning run 2026-10-30: nothing to plan again; 0012 is still escalated and unanswered. Outcomes: 0011 (M, 5 steps)
 and 0006 (developer-hard re-spec) both merged after owner approval.
 
+Planning run 2026-10-30 (2nd) after owner answered 0012:
+- 0012 dry-run, L, rebaser, status draft (owner: approve task file before run), worktree + temp refs dryrun/main,
+  rebase/1.23.4b, bb/base/1.23.3b deleted at end; smoke excluded (no tty) → [human]. Watch: hooks on ../ worktree.
+- 0015 .gitignore negation + exec bit on 5 entry scripts, S, role rebaser only because of the rebase.sh/smoke.sh name hook.
+- 0016 build.sh preflight (node major vs .nvmrc, gtar) + en-US-packs step after import, S, build ui, stub-PATH test.
+  Watch: whether developer may edit scripts/agents/build.sh; teamlead cannot even grep it (hook: "building").
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
