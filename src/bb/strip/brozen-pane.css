@@ -1,0 +1,26 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* ADR-0003 2.5: Marketplace is hidden while bb.strip.mods is on. */
+:root[bb-strip-mods] #category-zen-marketplace {
+  display: none;
+}
+
+#bbStripPane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+#bbStripPane[hidden] {
+  display: none;
+}
+
+.bb-strip-restart-note {
+  margin: var(--space-xsmall) 0 0;
+}
+
+#bbStripPane moz-button {
+  align-self: start;
+}

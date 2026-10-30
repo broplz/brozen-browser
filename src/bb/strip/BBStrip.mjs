@@ -146,8 +146,32 @@ const observer = {
   },
 };
 
+// ADR-0003 2.7: the BROzen pane. Registered here because this module runs once
+// per process; the actor is limited to about:preferences / about:settings.
+function registerPane() {
+  L10nRegistry.getInstance().registerSources([
+    new L10nFileSource(
+      "bb-strip",
+      "app",
+      ["en-US", "ru"],
+      "chrome://browser/content/bb/strip/l10n/{locale}/"
+    ),
+  ]);
+  ChromeUtils.registerWindowActor("BBStripPane", {
+    parent: {
+      esModuleURI: "chrome://browser/content/bb/strip/BBStripPaneParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "chrome://browser/content/bb/strip/BBStripPaneChild.sys.mjs",
+      events: { DOMContentLoaded: { capture: true } },
+    },
+    matches: ["about:preferences*", "about:settings*"],
+  });
+}
+
 // Once per process: this module is imported into the shared global.
 for (const { pref, rows } of TABLE) {
   applyRows(pref, rows);
 }
 Services.prefs.addObserver("bb.strip.", observer);
+registerPane();
