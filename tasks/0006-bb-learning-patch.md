@@ -21,9 +21,9 @@ allowed_paths:
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#риски-и-план-проверки-фаза-0-до-7-ноября
 returns: 0
 sessions: 0
-reviewed_sha: ff41cac1b5c43117a9dad305f8c1bd617c0fbb3e
-qa_sha: ff41cac1b5c43117a9dad305f8c1bd617c0fbb3e
-blocked_reason: 
+reviewed_sha: ce1907ff16266fa79da5d5052efabc61c17fab61
+qa_sha: ce1907ff16266fa79da5d5052efabc61c17fab61
+blocked_reason: merge_gate
 ---
 ## Goal
 Run ADR-0002 план проверки п.2: author the first BB patch, a learning one, on `browser/base/content/browser.js`
@@ -108,6 +108,22 @@ the exec bit.
 
 ## Review
 APPROVE
+Re-review after the rebase onto feat/layer (round 2):
+1. Spec: `diff.sh` vs the new base still shows only README.md and learning-browser-js.patch, unchanged since
+   ce1907ff1. Everything else between the old reviewed_sha and HEAD came in with feat/layer (scripts/bb/*, other
+   tasks), not with this task.
+2. Scope: two files, both in allowed_paths. No tests.
+3. Layer: layer_lint → 0 fail, 0 warn. Class-1 patch, complete README, nothing in engine/ committed.
+4. Correctness: comment-only hunk, so the patch has no runtime effect.
+5. Verification, re-run on the rebased tree: `bash scripts/bb/patches.sh check` → `OK layer/learning-browser-js`;
+   `grep -c "BB(layer)" engine/browser/base/content/browser.js` → `1`.
+6. Hygiene: clean.
+Non-blocking, still open: src/bb/patches/layer/learning-browser-js/README.md:17-18 calls `scripts/bb/patches.sh`
+directly, and patches.sh is still mode 644, so that command fails as written. Fix either with `bash …` in the README
+or by setting the exec bit in a layer task.
+
+---
+APPROVE
 Checklist:
 1. Spec: README frontmatter and the four sections match DoD 1. The patch has export format (index line,
    full context) and touches only browser.js. It adds 2 comment lines plus 1 blank line, one of which has `BB(layer)`. The hunk is at
@@ -127,6 +143,8 @@ Non-blocking notes:
 
 ## QA
 PASS
+Re-run 2026-10-30 on the current branch (all checks green):
+- Two builds in a row: `BUILD RESULT: OK` (logs/build-ui-20261030-163153.log, logs/build-ui-20261030-163239.log); status → `applied layer/learning-browser-js`; grep count `1`; check → OK; diff.sh --names → two files; layer_lint 0 fail; lint 0 problems (logs/test-lint-20261030-163318.log). DoD 8 export not re-run (QA hook); git status clean after imports.
 1. DoD 1: README frontmatter (epic, adr, files, upstream none, rebuild ui) and the four sections are present.
 2. DoD 2: patch has export format, touches only browser/base/content/browser.js, adds 2 comment lines (one with `BB(layer)`) and 1 blank line.
 3. DoD 3: `bash scripts/bb/patches.sh check` → `OK layer/learning-browser-js`.
