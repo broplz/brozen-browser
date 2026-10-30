@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: M
-status: ready
+status: approved
 base: feat/layer
 branch: task/0018-agents-merge-gate-patch-id
 depends_on: []
@@ -22,8 +22,8 @@ allowed_paths:
 spec: tasks/backlog.md
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 03f9dcadf5c04eef99a54cdd15987802b71bc202
+qa_sha: 03f9dcadf5c04eef99a54cdd15987802b71bc202
 blocked_reason:
 ---
 ## Goal
@@ -67,3 +67,33 @@ code change after the verdict still fails the gate. Backlog 0018.
   `pipeline_lib` and an in-test `import merge_task`; never put `merge_task`/`run_task` in a Bash
   command line (even py_compile or grep on the path is denied). Read/Edit tools work on them.
 - `test_*.py` under scripts/agents/tests is a new file — allowed for this kind.
+
+## Result
+Round 1:
+- pipeline_lib.py: shared `CODE_PATHSPEC` (used by `code_head`), `code_patch_id(base, rev)`, `same_code(base, sha, branch)` (missing object → False, prefix fast path, then patch-id compare; empty diff → False).
+- merge_task.py: gate loop calls `pl.same_code`; error text unchanged; docstring mentions the patch-id fallback.
+- run_task.py: only writes `reviewed_sha`/`qa_sha`, never compares them to the head → left untouched.
+- tests/test_same_code.py covers cases a–f and `import merge_task` → `test_same_code: OK` (run).
+- Not run: diff.sh --names before commit was empty; re-check after commit is the reviewer's job. No build needed.
+
+## Review
+APPROVE
+
+Checklist notes:
+1. Spec: DoD 1 holds. `same_code(base, sha, branch)` is at pipeline_lib.py:111. It checks for a missing object first, then the prefix fast path, then compares patch-ids, and an empty diff returns False. merge_task.py:38 calls it, and the error text is unchanged. DoD 5: the docstring at merge_task.py:8-9 mentions the patch-id fallback. The excludes are one shared `CODE_PATHSPEC` tuple (pipeline_lib.py:91), and `code_head` uses it too. The teamlead notes allow subprocess with cwd=config.ROOT for the patch-id pipe.
+2. Scope: DoD 4 holds. `diff.sh --names` lists only merge_task.py, pipeline_lib.py and tests/test_same_code.py. run_task.py is untouched. That is correct: run_task.py:87/95 only decide whether to *set* the fields. They do not gate on them.
+3. Layer: not applicable (pipeline scripts). layer_lint gives 0 fail, 0 warn.
+4. Correctness: errors are handled without raising. `merge-base` failure and unknown objects return False or "", with check=False. I traced the rebase logic by hand. In case c, both diffs are taken against their own merge-bases, so they are the same diff. Case e differs, as it should.
+5. Verification: I ran `python3 scripts/agents/tests/test_same_code.py` and got `test_same_code: OK`. Cases a–f and the `import merge_task` + `gates` check (DoD 3) are all present.
+6. Hygiene: no secrets and no TODOs. Two non-blocking nits:
+   1. scripts/agents/tests/test_same_code.py:39: the `mkdtemp` repo is never removed. A `tempfile.TemporaryDirectory()` would clean it up.
+   2. Conflict-rebase limit: after any conflicted rebase the gate always needs a fresh review/qa, even when the resolution is identical. In that case the diff against the new base still differs. This matches the Goal ("clean rebase") and DoD 2e, so it is noted here only.
+
+## QA
+PASS
+
+1. Lint: `scripts/agents/test.sh lint` → OK, 0 problems; layer_lint 0 fail, 0 warn. Build type none, so no build.
+2. DoD 1: `pl.same_code` is used at merge_task.py:38. The error text is unchanged.
+3. DoD 2 and 3: `python3 scripts/agents/tests/test_same_code.py` → `test_same_code: OK` (cases a–f, plus the merge_task import and `gates` check).
+4. DoD 4: `diff.sh` needs a path argument (`tasks/0018-...md`), not the bare id, so `diff.sh 0018 --names` crashed. The crash is in the script, not the task. The branch diff lists only merge_task.py, pipeline_lib.py and tests/test_same_code.py, all within allowed_paths.
+5. DoD 5: the docstring at merge_task.py:8-9 mentions the patch-id fallback.
