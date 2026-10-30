@@ -110,6 +110,8 @@ Planning run 2026-10-30 (7th) after owner round 2 on 0021:
   only → deviation noted FYI in decisions-needed. Watch: does Zen build without the updater?
 - Lesson: an ordering window (0023 default brand bb fails until 0021 adds it) → no real-build DoD in the first task; flag it.
 
+Planning run 2026-10-30 (8th): nothing to plan. Files exist for all of 0001-0023 on ## Next; no new items.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
