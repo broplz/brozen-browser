@@ -45,3 +45,5 @@ logs/*
 !tasks/backlog.md
 .claude/replay/
 .env
+!configs/bb/mozconfig
+!configs/bb/mozconfig.macos
