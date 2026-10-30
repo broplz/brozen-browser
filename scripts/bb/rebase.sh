@@ -4,9 +4,10 @@
 # (post_rebase).
 #   rebase.sh <zen-tag>              run steps 1-11
 #   rebase.sh --continue <zen-tag>   resume after the conflicts of step 4 were resolved
+#                                    (at publish only, when the finalize commit already exists)
 # Exit: 0 ok · 1 failure · 2 usage · 3 stopped on a git conflict.
 # Env overrides: BB_REPO_DIR BB_MAIN_BRANCH BB_UPSTREAM_REMOTE BB_MIN_FREE_GB BB_GTAR BB_LOG_DIR
-#   BB_ENGINE_DIR BB_TARBALL_DIR BB_PATCHES NVM_DIR
+#   BB_ENGINE_DIR BB_TARBALL_DIR BB_PATCHES NVM_DIR BB_JOBS (build --jobs, default 6)
 #   BB_SMOKE (smoke.sh) BB_REPORT (report.sh) BB_DIST_DIR (<repo>/dist, where the DMG is)
 #   BB_APPS_DIR (/Applications) BB_PUSH_REMOTE (origin) BB_POST_STEPS (steps 5-11; tests shorten it).
 # The main branch moves only in `publish`, after smoke, package, install and finalize succeeded;
@@ -21,6 +22,7 @@ BB_MAIN_BRANCH="${BB_MAIN_BRANCH:-main}"
 BB_UPSTREAM_REMOTE="${BB_UPSTREAM_REMOTE:-upstream}"
 BB_MIN_FREE_GB="${BB_MIN_FREE_GB:-60}"
 BB_GTAR="${BB_GTAR:-gtar}"
+BB_JOBS="${BB_JOBS:-6}"
 
 LAYER_YAML="$BB_REPO_DIR/src/bb/layer.yaml"
 BUILD_CONFIG="surfer.json"
@@ -226,7 +228,7 @@ do_patches() {
 
 # ---- steps 8-9 ----------------------------------------------------------------------------
 do_import() { npm_or_fail "npm run import" npm run import; }
-do_build() { npm_or_fail "npm run build" caffeinate -dims npm run build -- --jobs 6; }
+do_build() { npm_or_fail "npm run build" caffeinate -dims npm run build -- --jobs "$BB_JOBS"; }
 do_lint() { npm_or_fail "npm run lint" npm run lint; }
 
 # ---- step 10 ------------------------------------------------------------------------------
@@ -271,6 +273,12 @@ rewrite_base() {
     { print }' "$LAYER_YAML"
 }
 
+# finalize_subject <firefox> — subject of the finalize commit (written by do_finalize, found by --continue)
+finalize_subject() { echo "rebase: Zen $Y (Firefox $1)"; }
+
+# finalized — true when HEAD is the finalize commit of Y
+finalized() { [ "$(g log -1 --format=%s HEAD)" = "$(finalize_subject "$(tag_firefox "$Y")")" ]; }
+
 # on rebase/Y: new base in layer.yaml + the ok report, one commit
 do_finalize() {
   local fy tmp
@@ -281,7 +289,7 @@ do_finalize() {
   rm -f "$tmp"
   BB_REBASE_DOCS="$BB_REBASE_DOCS" bash "$BB_REPORT" "$Y" "$BB_LOG" ok || { say_fail "report failed"; return 1; }
   g add src/bb/layer.yaml "docs/rebase/$Y.md" docs/rebase/README.md &&
-    g commit -q -m "rebase: Zen $Y (Firefox $fy)" || { say_fail "commit failed"; return 1; }
+    g commit -q -m "$(finalize_subject "$fy")" || { say_fail "commit failed"; return 1; }
 }
 
 # the only place that moves main: expects origin's main to be the one the rebase started from
@@ -352,7 +360,13 @@ if [ "$cont" = 1 ]; then
   BB_LOG="$({ ls -t "$BB_LOG_DIR"/rebase-"$Y"-*.log 2>/dev/null || true; } | head -n 1)"
   if [ -n "$BB_LOG" ]; then export BB_LOG; else bb_log_open "rebase-$Y" >/dev/null; fi
   echo "continue: $Y" | tee -a "$BB_LOG"
-  post_rebase
+  if finalized; then
+    echo "continue: finalize commit found, publish only" | tee -a "$BB_LOG"
+    cd "$BB_REPO_DIR"
+    run_step publish post
+  else
+    post_rebase
+  fi
   exit 0
 fi
 

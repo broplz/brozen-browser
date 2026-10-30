@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0019-bb-rebase-jobs-continue-publish
 depends_on: [0011]
@@ -22,7 +22,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 8cd376cddc9584aec6e385fdcb08cb0555bc41b7
 qa_sha: 8cd376cddc9584aec6e385fdcb08cb0555bc41b7
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Two gaps in scripts/bb/rebase.sh (backlog 0019, ADR-0002 Решение 4 steps 9 and 11):

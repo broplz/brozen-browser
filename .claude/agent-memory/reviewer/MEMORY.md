@@ -8,4 +8,5 @@
 - [Rollback paths](feedback_rollback_paths.md) — ref-moving chains: mid-chain failure leaves main moved; check exclusion rules generalize
 - [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths
 
+- [BB_JOBS env](project_bb_jobs_env.md) — agents export BB_JOBS=10; old rebase tests expecting --jobs 6 fail
 - [patches.sh exec bit](project_patches_sh_exec_bit.md) — no exec bit; READMEs calling it directly fail
