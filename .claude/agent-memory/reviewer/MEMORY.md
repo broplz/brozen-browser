@@ -5,4 +5,5 @@
 - [Background procs](feedback_background_procs.md) — `cmd &` under step's tee must redirect fds; hook blocks "smoke"/"rebase" cmds
 - [Step wrapping](feedback_step_wrapping.md) — main-shell work skips step footers; do_* fns have errexit off → unchecked rm
 - [Fixture vs real input](feedback_fixture_vs_real.md) — `wc -lc` real files; `while read` drops a last line without a newline
+- [Rollback paths](feedback_rollback_paths.md) — ref-moving chains: mid-chain failure leaves main moved; check exclusion rules generalize
 - [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths
