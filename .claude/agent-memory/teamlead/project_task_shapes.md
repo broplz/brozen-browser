@@ -102,6 +102,14 @@ profile dir means the ids change, and that needs an E0 ADR. Re-escalated. 0022 s
 so it was not planned. Hook: any Bash command naming surfer.json (even grep) is blocked → use Read.
 Lesson: an answer to "what" is not an answer to "how". Check every listed blocker before planning.
 
+Planning run 2026-10-30 (7th) after owner round 2 on 0021:
+- 0023 build.sh `step "brand"` (BB_BRAND, default bb) before import + stub-PATH test, S, build none, needs_approval.
+- 0021 brand bb in surfer.json + layer.yaml edit + branding README, S, developer-hard, build full, needs_approval.
+  JSON can't hold comments → `"_bb": "BB(e0): …"` key for the layer_lint marker rule. Watch: will surfer accept the key?
+- 0022 `--disable-updater` in configs/bb/mozconfig, S, 1 file, full build. ADR said prefs/bb/updates.yaml, but prefs/bb is bb.*
+  only → deviation noted FYI in decisions-needed. Watch: does Zen build without the updater?
+- Lesson: an ordering window (0023 default brand bb fails until 0021 adds it) → no real-build DoD in the first task; flag it.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
