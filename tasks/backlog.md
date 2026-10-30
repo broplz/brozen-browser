@@ -40,3 +40,4 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - rebase.sh: do_build hardcodes --jobs 6 — use BB_JOBS
 - rebase.sh: define --continue behaviour after a failed publish (finalize commit already on rebase/<tag>)
 - settings.json allow: add `Bash(grep *)`; check why `Bash(bash -n *)` still gets denied (see night log 2026-10-29)
+- merge gate: after a manual rebase reviewed_sha/qa_sha mismatch is a false positive — compare `git patch-id` (or diff vs base) instead of commit sha
