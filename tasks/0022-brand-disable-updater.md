@@ -6,7 +6,7 @@ prefix: e0
 kind: feature
 role: developer-hard
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0022-brand-disable-updater
 depends_on: [0021]
@@ -21,7 +21,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 600c09bfd7dcf6756e362b2e714702c6eb8b5e76
 qa_sha: 600c09bfd7dcf6756e362b2e714702c6eb8b5e76
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 The dev build polls `https://updates.zen-browser.app/updates/browser/Darwin_aarch64-gcc3/unofficial/update.xml` and logs an XML
