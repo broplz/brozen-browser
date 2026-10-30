@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0019-bb-rebase-jobs-continue-publish
 depends_on: [0011]
@@ -20,8 +20,8 @@ allowed_paths:
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 8cd376cddc9584aec6e385fdcb08cb0555bc41b7
+qa_sha: 8cd376cddc9584aec6e385fdcb08cb0555bc41b7
 blocked_reason:
 ---
 ## Goal
@@ -63,3 +63,56 @@ the `publish` step only.
 - Hook: no agent role but rebaser may run a command naming `scripts/bb/rebase.sh` (so no
   `bash -n scripts/bb/rebase.sh`). Tests reach it via `$here/../rebase.sh` — that is allowed. Do not
   edit the existing test files; add the new one.
+
+## Result
+Round 1:
+- rebase.sh: `BB_JOBS` (default 6) used by `do_build`; `finalize_subject` helper shared by
+  `do_finalize` and the new `finalized` check; `--continue` runs `publish` only when HEAD of
+  `rebase/<tag>` is the finalize commit (logs `continue: finalize commit found, publish only`),
+  otherwise `post_rebase` as before. Header lists `BB_JOBS` and the new `--continue` behaviour.
+- New scripts/bb/tests/rebase_continue_test.sh (cases a, b, c) → `rebase_continue_test: OK`.
+- `rebase_test.sh` → PASS.
+- Open: `rebase_final_test.sh` and `rebase_post_test.sh` FAIL in this session only because the
+  session environment exports `BB_JOBS=10`, and those tests (which I may not edit) expect
+  `--jobs 6`. I could not rerun them with `env -u BB_JOBS` (Bash denied it), so DoD 2 is
+  unverified for those two; run them with `BB_JOBS` unset. Failing checks are exactly the
+  `--jobs 6` ones (post a/f, final e). Suggest the tests `unset BB_JOBS` in a follow-up task.
+
+## QA
+PASS
+1. lint: OK (0 problems); layer_lint 0 fail, 0 warn (log logs/test-lint-20261030-171504.log).
+2. DoD 1: `rebase_continue_test.sh` → exit 0, `rebase_continue_test: OK`.
+3. DoD 2: `rebase_test.sh` → PASS. `rebase_final_test.sh` and `rebase_post_test.sh` fail only on
+   the checks the developer named (final e; post a, f), because the agent env exports
+   `BB_JOBS=10` (.claude/settings.json) and those tests expect `--jobs 6`. QA could not unset it
+   (`env -u` denied). Failing set is exactly the `--jobs 6` family; it is an environment
+   conflict, not this diff (as the reviewer noted). Run them with BB_JOBS unset.
+4. DoD 3: header lines 7 and 10 of rebase.sh list `BB_JOBS` and the `--continue` publish resume.
+5. DoD 4: diff names are rebase.sh and rebase_continue_test.sh only (`diff.sh 0019 --names`
+   needs a task path, it errors on bare `0019`; the plain run shows the two files).
+
+For the human: (a) run rebase_final_test.sh and rebase_post_test.sh with BB_JOBS unset;
+(b) follow-up task: make the existing rebase tests `unset BB_JOBS`.
+
+## Review
+APPROVE
+Checklist: (1) Spec — matches DoD 1-4 and the teamlead notes: `BB_JOBS` default sits with the other
+defaults (rebase.sh:25) and is used by do_build (rebase.sh:231); one `finalize_subject` helper
+(rebase.sh:277) is used by both do_finalize (rebase.sh:292) and `finalized` (rebase.sh:280); the
+`--continue` branch logs the required line and runs `run_step publish post`, otherwise calls
+`post_rebase` (rebase.sh:363-369). Header updated (rebase.sh:7,10). (2) Scope — only the 2 allowed
+files; existing tests untouched. (3) Layer — no Zen/Firefox files; layer_lint: 0 fail, 0 warn.
+(4) Correctness — after a failed publish, publish_rollback leaves HEAD on rebase/<tag>, so the
+existing branch check passes and `finalized` sees the finalize commit; publish needs no node, so
+skipping use_node is fine. (5) Result — the BB_JOBS claim is real: .claude/settings.json:126 exports
+`BB_JOBS=10` to every agent session. (6) Hygiene — clean.
+
+Notes (not blocking):
+1. For qa: DoD 2 must run `rebase_final_test.sh` and `rebase_post_test.sh` with `BB_JOBS` unset.
+   The agent env exports `BB_JOBS=10` (.claude/settings.json:126), and those tests expect `--jobs 6`.
+   The failure comes from the environment, not from this diff. If qa cannot unset the var, it is a
+   DoD/environment conflict for the teamlead, not a reason to FAIL this code.
+2. For teamlead: add a follow-up so the existing rebase tests `unset BB_JOBS`, like
+   rebase_continue_test.sh does at line 79.
+3. rebase.sh:365 `cd "$BB_REPO_DIR"` repeats post_rebase:319. A shared helper is possible but not
+   worth another round.
