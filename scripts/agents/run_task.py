@@ -17,6 +17,7 @@ The driver owns git: it creates and switches branches, auto-commits what agents 
 and maintains `sessions`, `returns`, `reviewed_sha`/`qa_sha` when an agent forgot them.
 """
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -30,19 +31,40 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def run_agent(role, path, **kw):
-    """Nonzero from run_agent.py means no session started (see its docstring). rc 2 is argparse
-    rejecting what this driver passed — a driver bug, so stop and leave the task alone. Any other
-    rc is a task or environment problem: block the task instead of exiting, because run_queue.py
-    calls run_task() in-process and must be able to skip it under --continue-on-block."""
+    """Whether a session ran is read from logs/agent-sessions.jsonl, not from the rc: run_agent.py
+    appends a line for this role and task once `claude` returned, so a nonzero rc with that line is a
+    session that ended badly — its outcome is in the task file, which the caller reads next. rc 2 is
+    argparse rejecting what this driver passed — a driver bug, so stop and leave the task alone.
+    Nonzero without the line means no session started: block the task instead of exiting, because
+    run_queue.py calls run_task() in-process and must be able to skip it under --continue-on-block."""
     cmd = [sys.executable, os.path.join(HERE, "run_agent.py"), role, path]
     for k, v in kw.items():
         if v not in (None, "", False):
             cmd += [f"--{k.replace('_', '-')}", str(v)]
+    offset = sessions_log_size()
     rc = subprocess.run(cmd, cwd=config.ROOT, check=False).returncode
     if rc == 2:
         pl.die(f"driver bug: run_agent.py rejected its arguments {cmd[2:]}; task {pl.rel(path)} left untouched")
-    if rc:
+    if rc and not session_logged(offset, role, TaskFile(path).task_id()):
         set_blocked(TaskFile(path), "agent_not_started", f"run_agent.py {role} refused to start; see logs/pipeline.log")
+
+
+def sessions_log_size():
+    try:
+        return os.path.getsize(config.SESSIONS_LOG)
+    except FileNotFoundError:
+        return 0
+
+
+def session_logged(offset, role, tid):
+    """True when agent-sessions.jsonl got a line for this role and task after `offset`."""
+    try:
+        with open(config.SESSIONS_LOG, encoding="utf-8") as f:
+            f.seek(offset)
+            rows = [json.loads(line) for line in f if line.strip()]
+    except FileNotFoundError:
+        return False
+    return any(r.get("role") == role and r.get("task") == tid for r in rows)
 
 
 def commit_task(path, message):
@@ -52,6 +74,10 @@ def commit_task(path, message):
 
 
 def set_blocked(tf, reason, message=""):
+    """An already blocked task keeps its first reason and file: the driver only notifies."""
+    if tf.get("status") == "blocked":
+        pl.notify(f"task {tf.task_id()} already blocked ({tf.get('blocked_reason', '?')}); not re-blocking as {reason}. {message}".strip())
+        return
     tf.set("status", "blocked")
     tf.set("blocked_reason", reason)
     commit_task(tf.path, f"tasks: {tf.task_id()} blocked ({reason}) (driver)")
