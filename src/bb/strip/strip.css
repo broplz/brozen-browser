@@ -1,0 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* ADR-0003 2.6: Boosts UI that Zen does not gate on zen.boosts.enabled. */
+
+/* Site-data panel: create-boost button and the Boosts section
+ * (src/browser/base/content/zen-panels/site-data.inc:82-89,102). */
+#main-window[bb-strip-boosts] #zen-site-data-boost,
+#main-window[bb-strip-boosts] .zen-site-data-section:has(> #zen-site-data-boost-list) {
+  display: none !important;
+}
+
+/* Library: Boosts tab (ZenLibrary.mjs:1015-1017, ZenLibraryBoostsSection.id). */
+#main-window[bb-strip-boosts] .zen-library-tab[data-section="boosts"] {
+  display: none !important;
+}

@@ -6,7 +6,7 @@ prefix: e1
 kind: feature
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0026-strip-bbstrip-module
 depends_on: [0025]
@@ -26,7 +26,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 1e83525efeb4e073ff92445087474334dd7628b0
 qa_sha: 1e83525efeb4e073ff92445087474334dd7628b0
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0003 v2 Решение 1 (last paragraph), 2.2–2.6 and the 2.7 translation table: one module owns the contract between
