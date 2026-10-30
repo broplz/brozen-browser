@@ -42,7 +42,7 @@ prefs and drift, `smoke.sh` runs it first, and the result of a fresh full build 
    output), grouped by `#` section comments citing the ADR section:
    - switches (2.7 table): `bb.strip.eme=true`, `bb.strip.ai=true`, `bb.strip.sync=true`, `bb.strip.mods=true`,
      `bb.strip.boosts=false` (true = stripped);
-   - 2.1: `browser.discovery.enabled=false`;
+   - 2.1: none (`browser.discovery.enabled` is Zen's: `prefs/privatefox/disablemozilla.yaml:15`);
    - 2.2: `browser.ml.chat.page`, `browser.ml.chat.page.footerBadge`, `browser.ml.chat.page.menuBadge`,
      `browser.ml.chat.shortcuts.smartwindow`, `browser.ml.linkPreview.optin`, `browser.ml.pageAssist.enabled`,
      `browser.tabs.groups.smart.enabled`, `browser.tabs.groups.smart.userEnabled`, `browser.tabs.groups.smart.optin`,
@@ -106,6 +106,11 @@ prefs and drift, `smoke.sh` runs it first, and the result of a fresh full build 
   strip-check.
 - Telemetry has no switch (S3): no `bb.strip.telemetry`.
 - Role developer-hard: mozconfig change → full build (≈ 40 min); 2 failed full builds = strike.
+- Unblock 2026-10-31 (teamlead): escalated, stays blocked. R4 needs an owner choice (BB patch on
+  browser/moz.configure vs ADR 2.9 amendment dropping MOZ_DATA_REPORTING/MOZ_SERVICES_HEALTHREPORT from build_keys);
+  see docs/reports/decisions-needed.md. DoD 1 updated: `browser.discovery.enabled` dropped (Zen sets it), the
+  session-1 deviation is accepted. On the answer: option (b) → re-spec here (one build_keys line, DoD 5 reworded,
+  seed strip-allow.txt, smoke_test run); option (a) → new developer-hard task for the patch, this one depends on it.
 
 ## Handoff
 Session 1 (developer-hard). Blocked on R4: no `configs/bb/mozconfig` form can clear `MOZ_DATA_REPORTING`, so DoD 5 and 7
