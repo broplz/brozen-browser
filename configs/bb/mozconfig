@@ -11,5 +11,8 @@
 # BB(e0): no BB update server yet, so build without the app updater.
 ac_add_options --disable-updater
 
+# BB(e1-strip): ADR-0003 2.1 — Zen disables the crash reporter only under ZEN_RELEASE; BB always.
+ac_add_options --disable-crashreporter
+
 # BB is macOS-only, so the macOS fragment is sourced unconditionally.
 . "$topsrcdir/../configs/bb/mozconfig.macos"

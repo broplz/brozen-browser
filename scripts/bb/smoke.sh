@@ -51,6 +51,9 @@ if [ "$launch" = 1 ]; then
   echo "smoke: browser output in $profile.log" >&2
 fi
 
+# ADR-0003 2.9: the strip list must hold before anyone answers the checklist.
+/bin/bash "$BB_ROOT/scripts/bb/strip-check.sh" >&2 || exit 1
+
 yes_count=0
 total=0
 for file in "$smoke_dir"/*.txt; do

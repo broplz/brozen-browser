@@ -9,6 +9,6 @@
 - [Shell test review](feedback_shell_tests.md) — sandbox denies running tests; check `bash -c` vs `"$BASH"`, regex paths
 - [Multi-session docs](feedback_multisession_docs.md) — round-2 reports keep stale OPEN/session text and counts that don't add up
 - [Merged-task lint](feedback_merged_task_lint.md) — layer_lint on a merged task diffs HEAD; use --base/--branch of the squash
-
+- [Review text is linted](feedback_review_text_linted.md) — marker word in ## Review fails layer_lint → QA FAIL
 - [BB_JOBS env](project_bb_jobs_env.md) — agents export BB_JOBS=10; old rebase tests expecting --jobs 6 fail
 - [patches.sh exec bit](project_patches_sh_exec_bit.md) — no exec bit; READMEs calling it directly fail
