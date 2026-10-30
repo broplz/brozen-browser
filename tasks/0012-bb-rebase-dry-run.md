@@ -80,6 +80,8 @@ Git mechanics the answers imply (worktrees share refs with this repo, so these r
   `git worktree remove --force ../bb-rebase-test`, `git branch -D dryrun/main rebase/1.23.4b`, `git tag -d bb/base/1.23.3b`.
   Never `git push`, never touch `main` or `bb/base/1.23.4b`, never `npm run reset-ff`.
 - If a hook blocks work outside the repo (`../bb-rebase-test`) or `git worktree`: that is a Handoff + blocked, not a workaround.
+- Escalated 2026-10-30 (teamlead): guard_bash.py:46-47 are unchanged and have no role exemption, so a re-spec cannot unblock this.
+  The choice between a hook exemption and the owner doing the git setup by hand is in docs/reports/decisions-needed.md.
 
 ## Handoff
 Session 1 (rebaser, 2026-10-30). Blocked at setup, before anything ran. Nothing was created, changed or built.
