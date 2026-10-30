@@ -1,0 +1,14 @@
+diff --git a/browser/base/content/browser.js b/browser/base/content/browser.js
+index af8890a2103d3f54ea122caf52ad8a957cc4b06c..e7255c5e4051a86feba54e76103f93541fa4ae5d 100644
+--- a/browser/base/content/browser.js
++++ b/browser/base/content/browser.js
+@@ -2511,6 +2511,9 @@ var XULBrowserWindow = {
+     );
+   },
+ 
++  // BB(layer): learning patch, ADR-0002 verification plan item 2 (no runtime effect).
++  // See src/bb/patches/layer/learning-browser-js/README.md.
++
+   /**
+    * Potentially gets a URI for a MozBrowser to be shown to the user in the
+    * identity panel. For browsers whose content does not have a principal,

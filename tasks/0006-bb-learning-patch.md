@@ -6,7 +6,7 @@ prefix: layer
 kind: patch
 role: developer-hard
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0006-bb-learning-patch
 depends_on: [0013, 0005]
@@ -23,7 +23,7 @@ returns: 0
 sessions: 0
 reviewed_sha: ce1907ff16266fa79da5d5052efabc61c17fab61
 qa_sha: ce1907ff16266fa79da5d5052efabc61c17fab61
-blocked_reason: merge_gate
+blocked_reason: 
 ---
 ## Goal
 Run ADR-0002 план проверки п.2: author the first BB patch, a learning one, on `browser/base/content/browser.js`
