@@ -5,20 +5,20 @@
 bb-pane-title = BROzen
 
 bb-strip-ai =
-    .label = Remove AI features
-    .description = Hides chat, link previews and smart tab groups.
+    .label = AI features
+    .description = Shows chat, link previews and smart tab groups.
 bb-strip-sync =
-    .label = Remove Sync
-    .description = Hides Firefox Account sign-in and Sync.
+    .label = Firefox Account and Sync
+    .description = Allows Firefox Account sign-in and Sync.
 bb-strip-eme =
-    .label = Remove DRM (EME)
-    .description = Disables the Widevine module; DRM-protected video will not play.
+    .label = DRM (Widevine)
+    .description = Enables the Widevine module so DRM-protected video can play.
 bb-strip-mods =
-    .label = Remove Zen Mods
-    .description = Turns off Zen Mods and hides the Marketplace category.
+    .label = Zen Mods
+    .description = Turns on Zen Mods and shows the Marketplace category.
 bb-strip-boosts =
-    .label = Remove Boosts
-    .description = Hides Zen Boosts in the site panel and the Library.
+    .label = Zen Boosts
+    .description = Shows Zen Boosts in the site panel and the Library.
 
 bb-restart-note = Takes effect after a restart.
 bb-restart-button =
