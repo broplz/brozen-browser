@@ -65,6 +65,9 @@ escalated (decisions-needed line unanswered). Found-by-agents items (.gitignore 
 bit) were not promoted: they are not on ## Next and are left for the owner to order.
 Outcome: 0010 done.
 
+Planning run 2026-10-30: nothing to plan again; 0012 is still escalated and unanswered. Outcomes: 0011 (M, 5 steps)
+and 0006 (developer-hard re-spec) both merged after owner approval.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
