@@ -93,6 +93,9 @@ Planning run 2026-10-30 (4th): only 0020 and 0021 lacked files (only 2 left with
 - 0021 brand escalated: brand selection (build.sh passes no brand), binary icon copy (agents can't cp), app ids.
   Lesson: any task that has to copy binary assets is owner work, or needs a cp allowance first.
 
+Planning run 2026-10-30 (5th): nothing to plan. Every ## Next item has a file except 0021, whose escalation is still
+unanswered (no owner commit since a8eac5456). Outcome: 0017 done on the first try (S, 2 files).
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
