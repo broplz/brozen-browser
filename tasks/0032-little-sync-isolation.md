@@ -6,7 +6,7 @@ prefix: e3
 kind: feature
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0032-little-sync-isolation
 depends_on: []
@@ -26,7 +26,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 575e60729ff54871114534c252f585e3a8348b16
 qa_sha: 575e60729ff54871114534c252f585e3a8348b16
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0001 v2, Решение 2, variant E2 on top of E1 (plan item e3-02, independent of 0031). After this task

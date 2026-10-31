@@ -3,7 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         content/browser/bb/BBStartup.mjs                                        (../../bb/BBStartup.mjs)
-        content/browser/bb/strip/BBStrip.mjs                                    (../../bb/strip/BBStrip.mjs)
+        content/browser/bb/little/BBLittle.mjs                                  (../../bb/little/BBLittle.mjs)
+        content/browser/bb/strip/BBStrip.mjs                                  (../../bb/strip/BBStrip.mjs)
         content/browser/bb/strip/strip.css                                      (../../bb/strip/strip.css)
         content/browser/bb/strip/BBStripPaneParent.sys.mjs                      (../../bb/strip/BBStripPaneParent.sys.mjs)
         content/browser/bb/strip/BBStripPaneChild.sys.mjs                       (../../bb/strip/BBStripPaneChild.sys.mjs)
