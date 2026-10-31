@@ -11,3 +11,8 @@ const { initWindow } = ChromeUtils.importESModule(
   "chrome://browser/content/bb/strip/BBStrip.mjs"
 );
 initWindow(window);
+
+const { initWindow: initLittleWindow } = ChromeUtils.importESModule(
+  "chrome://browser/content/bb/little/BBLittle.mjs"
+);
+initLittleWindow(window);
