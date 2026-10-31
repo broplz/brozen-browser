@@ -6,7 +6,7 @@ prefix: e3
 kind: patch
 role: developer-hard
 size: M
-status: ready
+status: blocked
 base: feat/layer
 branch: task/0031-little-floating-spike
 depends_on: []
@@ -22,10 +22,10 @@ allowed_paths:
   - engine/**
 spec: docs/adr/0001-little-bb-floating-window.md#решение-1--уровень-окна-и-spaces-на-macos
 returns: 0
-sessions: 0
+sessions: 1
 reviewed_sha:
 qa_sha:
-blocked_reason:
+blocked_reason: "human: R8 focus measurements (DoD 8) and DoD 9 checks need the GUI; see docs/reports/e3-01-spike.md; also accept nsCocoaWindow.h in the patch"
 ---
 ## Goal
 ADR-0001 v2, Решение 1, variant C′ (plan item e3-01). After this task the BB patch
@@ -113,6 +113,33 @@ also measures focus/activity of the new window against the stock PiP player (ris
 - Strikes: 2 failed full builds → stop per CLAUDE.md rule 5.
 
 ## Handoff
+Session 1 (developer-hard). Blocked on things only a human can do; all agent-checkable DoD items are green.
+
+Done (commit `e3: floating-window patch…` + this commit):
+- DoD 1–3: patch + README in `src/bb/patches/e3-little-bb/floating-window/`; `scripts/bb/patches.sh check
+  e3-little-bb/floating-window` → `OK`. No Zen hunk overlap (Zen's nsCocoaWindow hunks are at 87/1333/3908/3924/4978
+  and external 70/5597/6948+; ours are around 5170 and 5405).
+- DoD 4: the grep only shows context lines; the `^\+.*(CanJoinAllSpaces|FullScreenPrimary)` grep returns nothing.
+- DoD 5: `scripts/agents/build.sh full` → `BUILD RESULT: OK type=full duration=1440s`
+  (logs/build-full-20261031-043811.log).
+- DoD 6: `test.sh lint` → OK; `layer_lint.py` → 0 fail, 0 warn, NEEDS APPROVAL (C++/ObjC/IDL), exit 3.
+- DoD 7: only files under `src/bb/patches/e3-little-bb/`, `docs/reports/e3-01-spike.md` and the task file.
+  `layer.yaml` is unchanged.
+
+Not done:
+- DoD 8: `docs/reports/e3-01-spike.md` has the procedure, the code-derived expectations, the window
+  difference (the player is `orderFront` only; bbfloating goes through `makeKeyAndOrderFront` as a
+  nonactivating panel) and R11 (`AXFrontmost`: no matches). The measured Browser Console values are
+  empty: the agent cannot drive native fullscreen Spaces, clicks and the Browser Console.
+- DoD 9: [human], not run.
+
+Deviation from DoD 2 for the owner to accept: the patch also touches `widget/cocoa/nsCocoaWindow.h` (one member,
+`bool mBBFloating`). `CreateNativeWindow` has no `aInitData`. It reads members (`mAlwaysOnTop`, `mPiPType`), and it is
+called again on window recreation (nsCocoaWindow.mm ~:6314, HideWindowChrome). So the flag has to live on the widget,
+just like `mAlwaysOnTop` (nsCocoaWindow.h:682, copied in `Create` at .mm:5169). The README `files:` lists it.
+
+Next: the owner runs the procedure in the report on this build, fills in the table and DoD 9. If everything is
+green → status review. If anything is red → blocked_reason R8/R9 per DoD 10.
 
 ## Result
 
