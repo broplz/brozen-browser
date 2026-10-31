@@ -6,7 +6,7 @@ prefix: e3
 kind: feature
 role: developer
 size: M
-status: ready
+status: approved
 base: feat/layer
 branch: task/0032-little-sync-isolation
 depends_on: []
@@ -24,8 +24,8 @@ allowed_paths:
 spec: docs/adr/0001-little-bb-floating-window.md#решение-2--признак-окна-и-исключение-из-синхронизации-zen
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 575e60729ff54871114534c252f585e3a8348b16
+qa_sha: 575e60729ff54871114534c252f585e3a8348b16
 blocked_reason:
 ---
 ## Goal
@@ -93,7 +93,56 @@ temporary: `win.name === "bb-little"`. No file under `src/zen/**` changes.
 ## Handoff
 
 ## Result
+Round 1.
+
+**Changed:** `src/bb/little/BBLittle.mjs` (new: `isLittleWindow`, `initWindow`), `src/bb/BBStartup.mjs` (+4 lines, imports BBLittle), `src/bb/jar.inc.mn` (+1), `prefs/bb/little.yaml` (new, `bb.little.enabled=true`). No `layer.yaml` entry (no hooks, no Zen edits).
+
+**Deviation from DoD 3 — no `gZen*` instance is replaced.** Zen already has an "unsynced window" input that every sync point reads, so BBLittle sets `win._zenStartupSyncFlag = "unsynced"` plus the `bb-little` attribute. Replacing `gZenWorkspaces` was worse: `ZenSpaceManager` has `#private` state (a subclass instance built late or a stand-in object breaks it), and the stock `init()` is already bound to `MozBeforeInitialXULLayout` (`ZenStartup.mjs:213`). The flag makes Zen take its own unsynced path (the same one it uses for `zen.window-sync.open-link-in-new-unsynced-window`). Pref off → nothing is set, stock behaviour.
+
+**Hook point:** `BBStartup.mjs` is the last script of `ZenPreloadedScripts.js:32`, so it runs at script load, before `MozBeforeInitialXULLayout` (`ZenStartup.mjs:213` → `gZenStartup.init` → `gZenWorkspaces.init`) and before `browser-window-before-show` (`browser-init.js:341` → `ZenWindowSync.sys.mjs:209-255`), which reads and then deletes the flag.
+
+**Sync points found (Zen file:line) and coverage:**
+- `ZenWindowSync.sys.mjs:232-255` `#onWindowBeforeShow` — flag → sets `zen-unsynced-window`, listens only to `TabOpen`, never sets `window.gZenWindowSync`: the mini window sends nothing (sender side). Covered.
+- `ZenWindowSync.sys.mjs:145-157` `#browserWindows` (iterated by `#runOnAllWindows`/`Async` :342/:362, used by `#syncItemForAllWindows` :728) — the iterating side is the module, filtering on the *target's* `gZenWorkspaces.privateWindowOrDisabled` → mini window is never a target. Covered (via `ZenSpaceManager.mjs:761-771`, which reads the flag, then the attribute).
+- `ZenSessionManager.sys.mjs:908-911` `restoreNewWindow` (tab cloning; log `:125` is just `log()`) — returns early on `privateWindowOrDisabled`. Covered.
+- `ZenSpaceManager.mjs:1530` (propagate workspaces), `:163-169` (init paths), `ZenPinnedTabManager.mjs:136` (pinned/essentials enabled) — all gated by `privateWindowOrDisabled`. Covered.
+- `ZenSpaceManager.mjs:742-755` `shouldHaveWorkspaces`: for a window without toolbar flags it is already false (E1) — the DoD 6 features string has no `toolbar`, so that window was probably disabled already; the flag matters once the final features/chromeFlags differ.
+- Not covered (out of task): `ZenSpaceRoutingManager.sys.mjs:308,439` and `ZenUBActionsProvider.sys.mjs:252,371` / `ZenUBSidebarProvider.sys.mjs:66` (`getTopWindow`/`getOrderedWindows`/`getMostRecentWindow` — relevant to DoD 8), `ZenCommonUtils.mjs:22-26`, SessionStore.
+
+**Verified:** `build.sh ui` → OK (27 s); `test.sh lint` → OK; `layer_lint.py` → 0 fail. DoD 2 grep not run separately (file has only `- name: bb.*` lines and comments).
+
+**Open / not verified:** DoD 6–8 are [human] and not run. Assumption to check first: `win.name === "bb-little"` must already be set when BBStartup runs (openDialog's name argument); if not, the attribute is missing and the flag unset. Whether `BrowserWindowTracker.getTopWindow()` skips the mini window (DoD 8) is unchecked.
 
 ## Review
+APPROVE
+
+Checklist (round 1):
+- Spec: DoD 1, 2 (I ran the grep myself: no output), 4 (`--names`: 4 files, all allowed, no src/zen) are met. DoD 3 deviates: no `gZen*` instance is replaced. Zen's own unsynced-window input (`_zenStartupSyncFlag = "unsynced"`) is used instead. I checked it against Zen: `ZenWindowSync.sys.mjs:224` gives forcedSync=false because `privateWindowOrDisabled` is true (`ZenSpaceManager.mjs:761-771` reads the flag), `:232-254` then takes the unsynced path and never sets `gZenWindowSync`. ADR-0001 :97 asks for "no hooks in src/zen/, mechanism from BBStartup behind a pref", and this does that with less code. The deviation is stated openly in ## Result. Accepted, but the owner has to sign off (item 1).
+- Scope: only allowed_paths; no tests touched; layer.yaml unchanged, which is correct (no hooks or edits).
+- Layer: no Zen file changed; pref `bb.little.enabled` is under bb.*; nothing in engine/; with the pref off `initWindow` returns before any side effect, so stock Zen behaviour stays (F2). layer_lint: 0 fail, 0 warn.
+- Correctness: no listeners added, no async code. The order claim holds: BBStartup runs at preloaded-script time, before `browser-window-before-show` (`ZenWindowSync.sys.mjs:209`), which reads and then deletes the flag; after that the `zen-unsynced-window` attribute carries the state.
+- Verification: build/lint claims belong to qa; the DoD 2 grep the developer skipped passes.
+- Hygiene: the deferred-work comment carries a task id (0031); English throughout.
+
+Items (non-blocking; qa, please list 1–3 under "For the human"):
+1. DoD 3 deviation needs owner sign-off: isolation relies on Zen's private field `window._zenStartupSyncFlag` and on the unsynced-window path (`ZenWindowSync.sys.mjs:230-254`, `ZenSpaceManager.mjs:764`), not on a `gZen*` substitution. These are internal Zen names, and nothing in layer.yaml or the rebase checklist tracks them. If the owner keeps this approach, a follow-up should add them to the rebase exclusion-point checklist (ADR-0001 "Последствия": the list of exclusion points is a live list).
+2. Side effect for DoD 6: the mini window gets `zen-unsynced-window="true"`, so Zen's unsynced-window styling applies (`zen-theme.css:249`, `zen-workspaces.css:209-316`). The owner should check that this looks acceptable.
+3. Private Little window: `ZenWindowSync.sys.mjs:227-228` turns the flag into "synced" for private windows, so a private mini window would sync. Out of scope for the v1 window (not private), noted for 0031.
+4. Nit, `src/bb/jar.inc.mn:7`: the unchanged `BBStrip.mjs` line lost two alignment spaces, which is an unrelated whitespace edit. Fix it in the next task that touches the file.
 
 ## QA
+PASS
+
+1. `build.sh ui` → BUILD RESULT: OK (25 s). `test.sh lint` → OK, 0 problems. `layer_lint.py` → 0 fail, 0 warn.
+2. DoD 1: `isLittleWindow` exports only `win.name === "bb-little"` with the TODO(0031) comment. OK.
+3. DoD 2: pref grep → no output; `bb.little.enabled` default true. OK.
+4. DoD 3: BBStartup calls BBLittle, which sets the attribute and `_zenStartupSyncFlag` only when the pref is on and the window is Little; with the pref off it returns first. Hook point and Zen file:line are stated. This deviates from the literal text: no `gZen*` instance is replaced. The reviewer accepted it, and the isolation goal is met with zero Zen edits. I did not run it in a browser.
+5. DoD 4: `diff.sh --names` lists 4 files, all allowed, none under src/zen/. OK.
+6. DoD 5: passed (item 1).
+
+### For the human
+- DoD 6, 7, 8 were not run; they need a browser.
+- Sign-off on the DoD 3 deviation: isolation relies on Zen internals (`_zenStartupSyncFlag`, the unsynced-window path), not on a `gZen*` substitution. Consider adding them to the rebase exclusion-point checklist.
+- The mini window gets `zen-unsynced-window="true"`, so Zen's unsynced-window styling applies. Check that it looks acceptable.
+- A private Little window would sync (`ZenWindowSync.sys.mjs:227-228`); this belongs to 0031.
+- Nit: the `BBStrip.mjs` line in `src/bb/jar.inc.mn` lost two alignment spaces.
