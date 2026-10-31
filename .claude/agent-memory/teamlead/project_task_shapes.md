@@ -125,6 +125,11 @@ Lesson: before a DoD asserts a config.status value fixable "in mozconfig only", 
 is an option or a derived/implied value (possible_origins=("implied",)). Also 0024's report missed a Zen-set pref
 (browser.discovery.enabled in prefs/privatefox): grep all prefs/ yaml before listing names.
 
+Outcome: 0031 (M spike, developer-hard, full build, C++/ObjC/IDL patch + GUI report) blocked 1st session. DoD 1–7 were green
+on the first try, and the build passed on the first full run. It blocked on GUI-only measurements (DoD 8 values had no [human] tag) and an
+extra file (nsCocoaWindow.h: CreateNativeWindow reads members, not aInitData). Escalated 2026-10-31. Lessons: any DoD that
+needs Browser Console/Spaces/clicks is [human], even when it "writes a report"; for a widget flag, list the widget .h too.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
