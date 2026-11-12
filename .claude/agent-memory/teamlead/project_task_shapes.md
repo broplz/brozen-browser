@@ -142,6 +142,12 @@ Outcome: 0034 blocked 1st session — my note claimed existing tests stay green 
 asserts the finalize commit's exact file list. Re-spec'd (test added to allowed_paths, one-line change). Lesson: when a
 task adds a file to an existing commit, grep existing tests for `diff-tree`/`--name-status` exact-list checks.
 
+Planning run 2026-11-12 (2nd): only 2 candidates (0036, the unnumbered run_task item). 0036 escalated as obsolete: the driver
+never imports, and build.sh/rebase.sh already run en-US packs. Before planning a "found by agents" item, grep whether a later
+task already covered it. 0037 = pipeline_lib.adopt_base_unblock + run_task call + git-fixture cases in check_run_task.py, S,
+needs_approval. Watch: a Python git fixture under config.ROOT override. Hook: even `git log -- run_task.py` is blocked for
+teamlead; read merge_task/run_task with Read.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
