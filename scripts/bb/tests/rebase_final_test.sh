@@ -96,7 +96,7 @@ check "a: app installed" test -e "$T/Applications/BB.app/x"
 check "a: hdiutil detach" calls_grep "hdiutil detach"
 # (b) the commit
 check "b: subject" eq "$(git -C "$R" log -1 --format=%s main)" "rebase: Zen 1.0.1b (Firefox 151.0)"
-check "b: files" eq "$(git -C "$R" diff-tree --no-commit-id --name-status -r main | tr '\n\t' '  ')" "A docs/rebase/1.0.1b.md M docs/rebase/README.md M src/bb/layer.yaml "
+check "b: files" eq "$(git -C "$R" diff-tree --no-commit-id --name-status -r main | tr '\n\t' '  ')" "A docs/rebase/1.0.1b.md M docs/rebase/README.md M src/bb/layer.yaml M surfer.json "
 layer="$(git -C "$R" show main:src/bb/layer.yaml)"
 check "b: layer zen" has "  zen: 1.0.1b" "$layer"
 check "b: layer firefox" has "  firefox: 151.0" "$layer"

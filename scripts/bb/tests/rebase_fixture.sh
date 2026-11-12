@@ -6,7 +6,11 @@
 #   make_engine  — $BB_ENGINE_DIR as a git repo: tracked tracked.txt, untracked junk, obj-x/keep
 #   ff_cfg <v>   — a surfer.json with Firefox version <v>
 
-ff_cfg() { printf '{\n  "version": {\n    "product": "firefox",\n    "version": "%s"\n  }\n}\n' "$1"; }
+ff_cfg() {
+  printf '{\n  "brands": {\n    "release": {\n      "release": {\n        "displayVersion": "9.9.9"\n      }\n    },\n'
+  printf '    "bb": {\n      "release": {\n        "displayVersion": "0.0.0"\n      }\n    }\n  },\n'
+  printf '  "version": {\n    "product": "firefox",\n    "version": "%s"\n  }\n}\n' "$1"
+}
 
 stub_env() {
   unset BB_JOBS BB_BRAND

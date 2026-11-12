@@ -277,6 +277,27 @@ rewrite_base() {
     { print }' "$LAYER_YAML"
 }
 
+# rewrite_display_version <tag> — the first displayVersion inside brands.bb of $BUILD_CONFIG, rest byte-identical;
+# exits 1 when no line was replaced
+rewrite_display_version() {
+  awk -v t="$1" '
+    /^ *"brands"/ { br = 1 }
+    br && /^ *"bb" *: *\{/ { bb = 1 }
+    bb && !done && /"displayVersion"/ { sub(/"displayVersion" *: *"[^"]*"/, "\"displayVersion\": \"" t "\""); done = 1 }
+    { print }
+    END { exit !done }' "$BB_REPO_DIR/$BUILD_CONFIG"
+}
+
+# replace_with <file> <cmd…> — run cmd into a temp file, replace <file> with it only on success
+replace_with() {
+  local file="$1" tmp rc=0
+  shift
+  tmp="$(mktemp)"
+  "$@" >"$tmp" && cat "$tmp" >"$file" || rc=1
+  rm -f "$tmp"
+  return "$rc"
+}
+
 # finalize_subject <firefox> — subject of the finalize commit (written by do_finalize, found by --continue)
 finalize_subject() { echo "rebase: Zen $Y (Firefox $1)"; }
 
@@ -285,14 +306,14 @@ finalized() { [ "$(g log -1 --format=%s HEAD)" = "$(finalize_subject "$(tag_fire
 
 # on rebase/Y: new base in layer.yaml + the ok report, one commit
 do_finalize() {
-  local fy tmp
+  local fy
   fy="$(tag_firefox "$Y")"
-  tmp="$(mktemp)"
-  rewrite_base "$Y" "$fy" "$(g rev-parse --short "refs/tags/$Y^{commit}")" >"$tmp" &&
-    cat "$tmp" >"$LAYER_YAML" || { rm -f "$tmp"; say_fail "cannot rewrite layer.yaml"; return 1; }
-  rm -f "$tmp"
+  replace_with "$BB_REPO_DIR/$BUILD_CONFIG" rewrite_display_version "$Y" ||
+    { say_fail "no brands.bb displayVersion in $BUILD_CONFIG"; return 1; }
+  replace_with "$LAYER_YAML" rewrite_base "$Y" "$fy" "$(g rev-parse --short "refs/tags/$Y^{commit}")" ||
+    { g checkout -q -- "$BUILD_CONFIG"; say_fail "cannot rewrite layer.yaml"; return 1; }
   BB_REBASE_DOCS="$BB_REBASE_DOCS" bash "$BB_REPORT" "$Y" "$BB_LOG" ok || { say_fail "report failed"; return 1; }
-  g add src/bb/layer.yaml "docs/rebase/$Y.md" docs/rebase/README.md &&
+  g add "$BUILD_CONFIG" src/bb/layer.yaml "docs/rebase/$Y.md" docs/rebase/README.md &&
     g commit -q -m "$(finalize_subject "$fy")" || { say_fail "commit failed"; return 1; }
 }
 
