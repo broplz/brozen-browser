@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0033-bb-rebase-brand-en-us-packs
 depends_on: []
@@ -24,7 +24,7 @@ returns: 0
 sessions: 0
 reviewed_sha: c57f7887ee07521b1c2ac00fc60f0bec2a602dc6
 qa_sha: c57f7887ee07521b1c2ac00fc60f0bec2a602dc6
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Before the owner's rebase to 1.24.1b (decisions-needed, "Owner answers (2026-11-12)"), scripts/bb/rebase.sh

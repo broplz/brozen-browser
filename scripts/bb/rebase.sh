@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # BB rebase runbook (ADR-0002 Решение 4): steps 1-4 preflight, fetch, recon, rebase/<tag>;
-# steps 5-11 deps, engine, patches, import, build, lint, smoke, package, install, finalize, publish
+# steps 5-11 deps, engine, patches, import, en_us_packs, build, lint, smoke, package, install, finalize, publish
 # (post_rebase).
 #   rebase.sh <zen-tag>              run steps 1-11
 #   rebase.sh --continue <zen-tag>   resume after the conflicts of step 4 were resolved
@@ -8,6 +8,7 @@
 # Exit: 0 ok · 1 failure · 2 usage · 3 stopped on a git conflict.
 # Env overrides: BB_REPO_DIR BB_MAIN_BRANCH BB_UPSTREAM_REMOTE BB_MIN_FREE_GB BB_GTAR BB_LOG_DIR
 #   BB_ENGINE_DIR BB_TARBALL_DIR BB_PATCHES NVM_DIR BB_JOBS (build --jobs, default 6)
+#   BB_BRAND (default bb)
 #   BB_SMOKE (smoke.sh) BB_REPORT (report.sh) BB_DIST_DIR (<repo>/dist, where the DMG is)
 #   BB_APPS_DIR (/Applications) BB_PUSH_REMOTE (origin) BB_POST_STEPS (steps 5-11; tests shorten it).
 # The main branch moves only in `publish`, after smoke, package, install and finalize succeeded;
@@ -23,6 +24,7 @@ BB_UPSTREAM_REMOTE="${BB_UPSTREAM_REMOTE:-upstream}"
 BB_MIN_FREE_GB="${BB_MIN_FREE_GB:-60}"
 BB_GTAR="${BB_GTAR:-gtar}"
 BB_JOBS="${BB_JOBS:-6}"
+BB_BRAND="${BB_BRAND:-bb}"
 
 LAYER_YAML="$BB_REPO_DIR/src/bb/layer.yaml"
 BUILD_CONFIG="surfer.json"
@@ -34,10 +36,10 @@ BB_REPORT="${BB_REPORT:-$BB_ROOT/scripts/bb/report.sh}"
 BB_DIST_DIR="${BB_DIST_DIR:-$BB_REPO_DIR/dist}"
 BB_APPS_DIR="${BB_APPS_DIR:-/Applications}"
 BB_PUSH_REMOTE="${BB_PUSH_REMOTE:-origin}"
-BB_POST_STEPS="${BB_POST_STEPS:-deps engine patches import build lint smoke package install finalize publish}"
+BB_POST_STEPS="${BB_POST_STEPS:-deps engine patches import en_us_packs build lint smoke package install finalize publish}"
 BB_REBASE_DOCS="$BB_REPO_DIR/docs/rebase"
 export BB_ENGINE_DIR
-TOOLCHAIN_FILES=".nvmrc rust-toolchain.toml package-lock.json requirements.txt"
+TOOLCHAIN_FILES=".nvmrc rust-toolchain.toml package-lock.json requirements.txt .python-version"
 
 usage() {
   echo "usage: rebase.sh <zen-tag> | rebase.sh --continue <zen-tag>" >&2
@@ -227,14 +229,16 @@ do_patches() {
 }
 
 # ---- steps 8-9 ----------------------------------------------------------------------------
-do_import() { npm_or_fail "npm run import" npm run import; }
+set_brand() { npm_or_fail "set brand" npm run surfer -- set brand "$BB_BRAND"; }
+do_import() { set_brand || return 1; npm_or_fail "npm run import" npm run import; }
+do_en_us_packs() { npm_or_fail "en-US packs" python3 scripts/update_en_US_packs.py; }
 do_build() { npm_or_fail "npm run build" caffeinate -dims npm run build -- --jobs "$BB_JOBS"; }
 do_lint() { npm_or_fail "npm run lint" npm run lint; }
 
 # ---- step 10 ------------------------------------------------------------------------------
 do_smoke() { bash "$BB_SMOKE" "$Y"; }
 
-do_package() { npm_or_fail "npm run package" npm run package; }
+do_package() { set_brand || return 1; npm_or_fail "npm run package" npm run package; }
 
 # newest DMG of $BB_DIST_DIR -> $BB_APPS_DIR/<name>.app; the DMG is detached on every path
 do_install() {

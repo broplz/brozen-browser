@@ -9,6 +9,7 @@
 ff_cfg() { printf '{\n  "version": {\n    "product": "firefox",\n    "version": "%s"\n  }\n}\n' "$1"; }
 
 stub_env() {
+  unset BB_JOBS BB_BRAND
   local s="$T/stubs"
   mkdir -p "$s/bin" "$s/nvm" "$T/tarballs"
   export CALLS="$s/calls"
@@ -32,6 +33,8 @@ echo "caffeinate $*" >>"$CALLS"
 shift
 "$@"
 EOF
+  # python3: log argv (the en-US packs step)
+  printf '#!/bin/sh\necho "python3 $*" >>"$CALLS"\nexit 0\n' >"$s/bin/python3"
   printf '#!/bin/sh\nexit 0\n' >"$s/patches.sh"
   printf 'nvm() { echo "nvm $*" >>"$CALLS"; [ -z "$STUB_FAIL_NVM" ]; }\n' >"$s/nvm/nvm.sh"
   # hdiutil: log argv; `attach … -mountpoint <m> …` fakes a mounted BB.app
@@ -51,7 +54,7 @@ if [ -n "$STUB_FAIL_SMOKE" ]; then echo "smoke: n e0 window"; echo "smoke: resul
 echo "smoke: y e0 window"
 echo "smoke: result 1/1"
 EOF
-  chmod +x "$s/bin/npm" "$s/bin/caffeinate" "$s/bin/hdiutil" "$s/smoke.sh"
+  chmod +x "$s/bin/python3" "$s/bin/npm" "$s/bin/caffeinate" "$s/bin/hdiutil" "$s/smoke.sh"
   export PATH="$s/bin:$PATH" NVM_DIR="$s/nvm" BB_PATCHES="$s/patches.sh"
   export BB_ENGINE_DIR="$T/engine" BB_TARBALL_DIR="$T/tarballs"
   export BB_SMOKE="$s/smoke.sh" BB_DIST_DIR="$T/dist" BB_APPS_DIR="$T/Applications" BB_PUSH_REMOTE="$T/no-such-remote.git"
