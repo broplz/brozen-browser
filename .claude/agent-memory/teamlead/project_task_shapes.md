@@ -148,6 +148,9 @@ task already covered it. 0037 = pipeline_lib.adopt_base_unblock + run_task call 
 needs_approval. Watch: a Python git fixture under config.ROOT override. Hook: even `git log -- run_task.py` is blocked for
 teamlead; read merge_task/run_task with Read.
 
+Planning run 2026-11-12 (3rd): nothing to plan. All ## Next items have files; 0036 is still escalated with no answer
+(no owner commit after dfc74b899). Outcomes: 0033 done first try (S script + test); 0034 done after the re-spec.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
