@@ -151,6 +151,14 @@ teamlead; read merge_task/run_task with Read.
 Planning run 2026-11-12 (3rd): nothing to plan. All ## Next items have files; 0036 is still escalated with no answer
 (no owner commit after dfc74b899). Outcomes: 0033 done first try (S script + test); 0034 done after the re-spec.
 
+Planning run 2026-11-13 on feat/layer (post-rebase 1.24.1b):
+- 0038 package step without MAR, M, developer-hard, explore+implement: note with option verdicts + fixture test
+  (DMG newer than step start, MAR-failure marker), real package run [human], needs_approval. Watch: exploration +
+  implementation in one session may block; mozconfig change is out of scope ("needs owner").
+- 0039 new `display_version` step before import, one helper shared with finalize (idempotent), S, test cases c-e.
+- 0040 docs-only report (squash/merge/rerere options vs ADR-0002 lines), S, needs_approval for the owner's pick.
+- Read tool works on node_modules surfer files with offset/limit ≤400 (Bash naming it is blocked; no Grep tool here).
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
