@@ -22,10 +22,10 @@ allowed_paths:
   - scripts/bb/tests/rebase_final_test.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
 returns: 0
-sessions: 1
+sessions: 0
 reviewed_sha:
 qa_sha:
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 Step 11 of the runbook (ADR-0002 Решение 4, `do_finalize` in scripts/bb/rebase.sh) writes the new base into
