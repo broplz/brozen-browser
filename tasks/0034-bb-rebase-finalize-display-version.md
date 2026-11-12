@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0034-bb-rebase-finalize-display-version
 depends_on: [0033]
@@ -23,8 +23,8 @@ allowed_paths:
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 27696d09be6e11036f474eb610fd093e84a81eef
+qa_sha: 27696d09be6e11036f474eb610fd093e84a81eef
 blocked_reason: 
 ---
 ## Goal
@@ -87,7 +87,34 @@ existing test (forbidden for me, and outside allowed_paths). Next: teamlead adds
 rebase_final_test.sh, or allows the edit; then this task is ready for review.
 
 ## Result
+Round 1: `rebase.sh` gets `replace_with` (temp-file replace helper, shared by layer.yaml and config rewrites) and
+`rewrite_display_version` (awk, line-based, `brands.bb` first displayVersion = `$Y`); `do_finalize` rewrites the
+config first and adds it to the finalize commit. `ff_cfg` in the fixture gains `brands`. New
+`rebase_display_version_test.sh`. `rebase_final_test.sh:99` only gained `M surfer.json ` in the expected list.
+Verified by running: rebase_display_version_test, rebase_final_test, rebase_continue_test, rebase_post_test,
+rebase_test — all pass. Note: diff.sh `--names` printed a stat, listing only allowed files (the final_test edit is
+uncommitted until this commit).
 
 ## Review
+APPROVE
+Checklist: (1) spec — `rewrite_display_version` (awk, line-based, first displayVersion after `"bb": {` inside
+`"brands"`, exit !done) and `replace_with` match the notes; order config → layer.yaml → report → one `g add` + commit;
+subject unchanged. Test covers DoD 1a (files, bb value, release kept, exactly one -/+ line) and 1b (exit 1, stderr,
+HEAD unchanged, porcelain clean). (2) scope — 4 allowed files; rebase_final_test.sh changes only line 99 (one -/+),
+new entry in path-sorted position. (3) layer — scripts only, layer_lint 0 fail/0 warn. (4) correctness — temp file
+removed on every path; on a layer.yaml failure the config is restored with `g checkout`. (5) Result claims match the
+diff; I did not run the tests (hook blocks rebase commands for reviewer) — qa runs them. (6) no TODOs/secrets.
+Non-blocking, for the owner / a later task:
+1. scripts/bb/rebase.sh:315 — when the report or the commit fails, config and layer.yaml stay rewritten (same as
+   before for layer.yaml). The rewrites are idempotent, so `--continue` heals it, but the note "a failure before the
+   commit must leave both files untouched" holds only for the two rewrite steps.
+2. scripts/bb/tests/rebase_display_version_test.sh:27-67 — a third copy of the fixture() from rebase_final_test.sh /
+   rebase_continue_test.sh (the DoD asked for "as in"); moving it into rebase_fixture.sh is backlog material.
+3. scripts/bb/tests/rebase_fixture.sh:7 — the header comment for `ff_cfg` does not mention the new `brands` block.
 
 ## QA
+PASS
+1. Lint: `test.sh lint` OK (0 problems); layer_lint 0 fail / 0 warn (log: logs/test-lint-20261112-160026.log).
+2. DoD 1: `rebase_display_version_test.sh` → exit 0, last line `rebase_display_version_test: OK`.
+3. DoD 2: rebase_final_test, rebase_continue_test, rebase_post_test, rebase_test all pass; `git diff feat/layer -- rebase_final_test.sh` shows exactly one `-`/one `+` line (line 99, adds `M surfer.json `).
+4. DoD 3: diff.sh --names lists only rebase.sh, the 3 allowed tests (task file excluded/allowed).
