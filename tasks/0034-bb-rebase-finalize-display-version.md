@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: blocked
+status: ready
 base: feat/layer
 branch: task/0034-bb-rebase-finalize-display-version
 depends_on: [0033]
@@ -19,12 +19,13 @@ allowed_paths:
   - scripts/bb/rebase.sh
   - scripts/bb/tests/rebase_display_version_test.sh
   - scripts/bb/tests/rebase_fixture.sh
+  - scripts/bb/tests/rebase_final_test.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
 returns: 0
 sessions: 1
 reviewed_sha:
 qa_sha:
-blocked_reason: DoD 1a contradicts existing rebase_final_test.sh check "b: files" (exact file list); needs that test edited
+blocked_reason:
 ---
 ## Goal
 Step 11 of the runbook (ADR-0002 Решение 4, `do_finalize` in scripts/bb/rebase.sh) writes the new base into
@@ -46,6 +47,9 @@ own version in E0; until the E0 ADR exists, the owner's choice is "= Zen tag".)
       finalize commit, `git status --porcelain` shows no change to the config or `src/bb/layer.yaml`.
 2. Existing tests still pass: `/bin/bash scripts/bb/tests/rebase_final_test.sh`, `rebase_continue_test.sh`,
    `rebase_post_test.sh`, `rebase_test.sh` (all under `scripts/bb/tests/`) → exit 0.
+   In `rebase_final_test.sh` the only allowed change is the expected string of check "b: files" (line 99): it
+   gains the build config entry (`M <config> `) at the position `git diff-tree` prints it (path-sorted). No other
+   line of that test changes (`git diff feat/layer -- scripts/bb/tests/rebase_final_test.sh` shows one `-` and one `+` line).
 3. `scripts/agents/diff.sh tasks/0034-bb-rebase-finalize-display-version.md --names` lists only allowed_paths and the task file.
 
 ## Notes from teamlead
@@ -64,7 +68,10 @@ own version in E0; until the E0 ADR exists, the owner's choice is "= Zen tag".)
 - rebase_fixture.sh: extend `ff_cfg` so the JSON it prints also has
   `"brands": { "release": { "release": { "displayVersion": "9.9.9" } }, "bb": { "release": { "displayVersion": "0.0.0" } } }`
   (multi-line, one key per line, like the real file) — `tag_firefox` must still read `version.version`. That keeps
-  rebase_final_test.sh and rebase_continue_test.sh green without editing them.
+  rebase_final_test.sh and rebase_continue_test.sh green (except the one expected-list line in rebase_final_test.sh).
+- Re-spec 2026-11-12 (session 1 blocked): rebase_final_test.sh:99 asserts the finalize commit's exact file list, so it
+  must list the config too. It is now in allowed_paths for that single line only. Make the edit with the Edit tool
+  (the config's name in a Bash command is hook-blocked; in a file it is fine).
 - No change to `finalize_subject`/`finalized` (0019): the commit subject stays the same.
 - Hook: no agent role but rebaser may run a command naming `scripts/bb/rebase.sh`; tests reach it via `$here/../rebase.sh`.
 

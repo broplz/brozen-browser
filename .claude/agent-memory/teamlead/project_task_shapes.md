@@ -138,6 +138,10 @@ Planning run 2026-11-12 on feat/layer (pre-rebase 1.24.1b):
   mozconfig stay (order-bound); `position:` field in layer.yaml; M by file count (6), build ui, needs_approval.
 - Hooks: teamlead/qa grep naming smoke.sh is blocked; build.sh too ("building"). Use Read or narrower path lists.
 
+Outcome: 0034 blocked 1st session — my note claimed existing tests stay green unedited, but rebase_final_test.sh:99
+asserts the finalize commit's exact file list. Re-spec'd (test added to allowed_paths, one-line change). Lesson: when a
+task adds a file to an existing commit, grep existing tests for `diff-tree`/`--name-status` exact-list checks.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
