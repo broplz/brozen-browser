@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: blocked
 base: feat/layer
 branch: task/0034-bb-rebase-finalize-display-version
 depends_on: [0033]
@@ -21,10 +21,10 @@ allowed_paths:
   - scripts/bb/tests/rebase_fixture.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
 returns: 0
-sessions: 0
+sessions: 1
 reviewed_sha:
 qa_sha:
-blocked_reason:
+blocked_reason: DoD 1a contradicts existing rebase_final_test.sh check "b: files" (exact file list); needs that test edited
 ---
 ## Goal
 Step 11 of the runbook (ADR-0002 Решение 4, `do_finalize` in scripts/bb/rebase.sh) writes the new base into
@@ -69,6 +69,15 @@ own version in E0; until the E0 ADR exists, the owner's choice is "= Zen tag".)
 - Hook: no agent role but rebaser may run a command naming `scripts/bb/rebase.sh`; tests reach it via `$here/../rebase.sh`.
 
 ## Handoff
+Done: rebase.sh `rewrite_display_version` + `replace_with` helper, `do_finalize` rewrites the config first and adds it
+to the commit; `ff_cfg` extended with `brands`; new `rebase_display_version_test.sh` → OK. rebase_continue_test,
+rebase_post_test, rebase_test pass.
+Blocked (spec contradiction): `rebase_final_test.sh` check "b: files" (line 99) asserts the finalize commit's exact file
+list `A docs/rebase/1.0.1b.md M docs/rebase/README.md M src/bb/layer.yaml`. DoD 1a requires the config in that commit,
+so the list now also has `M surfer.json` and the check fails. Not avoidable in rebase.sh; fixing needs editing that
+existing test (forbidden for me, and outside allowed_paths). Next: teamlead adds `M <config>` (list is sorted:
+`M docs/rebase/README.md`, `A docs/rebase/1.0.1b.md`, `M src/bb/layer.yaml`, `M surfer.json`) to line 99 of
+rebase_final_test.sh, or allows the edit; then this task is ready for review.
 
 ## Result
 
