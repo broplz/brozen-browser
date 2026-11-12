@@ -6,7 +6,7 @@ prefix: e3
 kind: patch
 role: developer-hard
 size: M
-status: blocked
+status: done
 base: feat/layer
 branch: task/0031-little-floating-spike
 depends_on: []
@@ -146,3 +146,6 @@ green → status review. If anything is red → blocked_reason R8/R9 per DoD 10.
 ## Review
 
 ## QA
+
+## Outcome
+Spike patch built on Firefox 158 (DoD 1–7 green), manual checks not run; superseded by 0043 after rebase to 1.24.1b.

@@ -6,7 +6,7 @@ prefix: layer
 kind: bug
 role: developer
 size: S
-status: ready
+status: done
 base: feat/layer
 branch: task/0037-agents-unblock-on-base
 depends_on: []
@@ -78,3 +78,11 @@ the task branch before the loop reads the status.
   `run_task.ensure_branch` and `pl.autocommit`. Leave them stubbed, or restore them; the new section only calls
   `pl.adopt_base_unblock` directly.
 - needs_approval: this changes the driver that runs every task.
+
+## Outcome
+Rejected by owner 2026-11-13, superseded by 0044.
+
+Reason: `adopt_base_unblock` cannot tell the owner's answer from an untouched copy on the base. While a task is in
+flight the base copy always says `ready`, so any block on the branch (`too_big`, `returns`, `merge_gate`,
+`merge_conflict`) would be lifted on the next iteration, the `sessions`/`returns` counters would be reset, the Handoff
+on the branch would be erased, and `run_unblock` would not call the teamlead.
