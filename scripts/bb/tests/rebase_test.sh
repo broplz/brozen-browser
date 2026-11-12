@@ -19,6 +19,7 @@ check() { # check <message> <command…>
 }
 eq() { [ "$1" = "$2" ]; }
 has() { grep -qF -- "$1" <<<"$2"; } # has <needle> <text>
+not_has() { ! has "$@"; }
 cfg() { printf '{\n  "version": {\n    "product": "firefox",\n    "version": "%s"\n  }\n}\n' "$1"; }
 
 # fixture <name> <ok|conflict> — upstream, clone and env for one case; sets R (clone) and LOGS
@@ -83,9 +84,10 @@ check "a: BB commit kept layer.yaml" git -C "$R" cat-file -e rebase/1.0.1b:src/b
 check "a: one log" eq "$(count_logs 1.0.1b)" 1
 log="$(cat "$LOGS"/rebase-1.0.1b-*.log)"
 for line in "recon: zen 1.0.0b -> 1.0.1b" "recon: firefox 150.0 -> 151.0" "recon: upstream-commits 1" \
-  "recon: toolchain-changed .nvmrc" "recon: expected-conflict src/zen/moz.build layer"; do
+  "recon: toolchain-changed .nvmrc"; do
   check "a: log has '$line'" has "$line" "$log"
 done
+check "a: far hunks, no expected-conflict" not_has "recon: expected-conflict src/zen/moz.build layer" "$log"
 for s in preflight fetch recon rebase; do
   check "a: log has $s exit=0" has "<== step: $s exit=0" "$log"
 done

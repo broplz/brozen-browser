@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0041-bb-rebase-recon-line-ranges
 depends_on: []
@@ -24,7 +24,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 800de19642e378ccf60e5b5a1d21466acf88b2b1
 qa_sha: 800de19642e378ccf60e5b5a1d21466acf88b2b1
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 `do_recon` (scripts/bb/rebase.sh:137-150) prints `recon: expected-conflict <file> <epic>` for every file that upstream

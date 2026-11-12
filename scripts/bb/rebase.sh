@@ -8,7 +8,8 @@
 # Exit: 0 ok · 1 failure · 2 usage · 3 stopped on a git conflict.
 # Env overrides: BB_REPO_DIR BB_MAIN_BRANCH BB_UPSTREAM_REMOTE BB_MIN_FREE_GB BB_GTAR BB_LOG_DIR
 #   BB_ENGINE_DIR BB_TARBALL_DIR BB_PATCHES NVM_DIR BB_JOBS (build --jobs, default 6)
-#   BB_BRAND (default bb)
+#   BB_BRAND (default bb) BB_RECON_MARGIN (default 3; lines between a layer and an upstream hunk
+#   for recon to report an expected conflict)
 #   BB_SMOKE (smoke.sh) BB_REPORT (report.sh) BB_DIST_DIR (<repo>/dist, where the DMG is)
 #   BB_APPS_DIR (/Applications) BB_PUSH_REMOTE (origin) BB_POST_STEPS (steps 5-11; tests shorten it).
 # The main branch moves only in `publish`, after smoke, package, install and finalize succeeded;
@@ -25,6 +26,7 @@ BB_MIN_FREE_GB="${BB_MIN_FREE_GB:-60}"
 BB_GTAR="${BB_GTAR:-gtar}"
 BB_JOBS="${BB_JOBS:-6}"
 BB_BRAND="${BB_BRAND:-bb}"
+BB_RECON_MARGIN="${BB_RECON_MARGIN:-3}"
 
 LAYER_YAML="$BB_REPO_DIR/src/bb/layer.yaml"
 BUILD_CONFIG="surfer.json"
@@ -74,8 +76,11 @@ registry_pairs() {
   awk '/^ *- file:/{f=$3} /^ +epic:/{if(f!=""){print f, $2; f=""}}' "$LAYER_YAML"
 }
 
-# patch_pairs — "<zen patch of a BB patch target> <epic>"
-patch_pairs() {
+# first_epic <file> — epic of the first "<file> <epic>" line on stdin
+first_epic() { awk -v f="$1" '$1==f{print $2; exit}'; }
+
+# bb_patch_targets — "<bb patch> <epic> <target> <zen patch of the target>" for every file a BB patch changes
+bb_patch_targets() {
   local root="$BB_REPO_DIR/src/bb/patches" p epic t nm
   for p in "$root"/*/*/*.patch; do
     [ -f "$p" ] || continue
@@ -83,10 +88,13 @@ patch_pairs() {
     epic="${epic%%/*}"
     { grep '^+++ b/' "$p" || true; } | cut -c7- | while read -r t; do
       nm="${t##*/}"
-      echo "src/${t%/*}/${nm//./-}.patch $epic"
+      echo "$p $epic $t src/${t%/*}/${nm//./-}.patch"
     done
   done
 }
+
+# patch_pairs — "<zen patch of a BB patch target> <epic>"
+patch_pairs() { bb_patch_targets | awk '{print $4, $2}'; }
 
 # epic_of <file> — owner epic by ADR-0002 Решение 2
 epic_of() {
@@ -96,7 +104,7 @@ epic_of() {
     src/bb/*/*) rest="${1#src/bb/}"; echo "${rest%%/*}" ;;
     src/bb/*) echo layer ;;
     *)
-      e="$(registry_pairs | awk -v f="$1" '$1==f{print $2; exit}')"
+      e="$(registry_pairs | first_epic "$1")"
       echo "${e:-unregistered}"
       ;;
   esac
@@ -134,9 +142,49 @@ do_fetch() {
 }
 
 # ---- step 3 -------------------------------------------------------------------------------
+# hunk_ranges — old-side "<start> <end>" of every `@@ -s,c` header on stdin (c=0: pure insertion after s)
+hunk_ranges() {
+  awk '/^@@ /{split($2, a, ","); s = substr(a[1], 2) + 0; c = (a[2] == "" ? 1 : a[2] + 0); print s, (c > 0 ? s + c - 1 : s)}'
+}
+
+# ranges_near <ranges> <ranges> — 0 when a range of one list lies within BB_RECON_MARGIN lines of one of the other
+ranges_near() {
+  awk -v m="$BB_RECON_MARGIN" '
+    NF < 2 {next}
+    FILENAME == ARGV[1] {n++; s[n] = $1; e[n] = $2; next}
+    {for (i = 1; i <= n; i++) if (s[i] <= $2 + m && $1 <= e[i] + m) found = 1}
+    END {exit !found}' <(echo "$1") <(echo "$2")
+}
+
+# bb_patch_hunks <zen patch> — @@ headers of the BB patch hunks whose target file has that Zen patch
+bb_patch_hunks() {
+  local p t
+  bb_patch_targets | awk -v z="$1" '$4==z{print $1, $3}' | while read -r p t; do
+    awk -v t="b/$t" '/^\+\+\+ /{on = ($2 == t)} on && /^@@ /' "$p"
+  done
+}
+
+# registered_near <x> <file> — layer and upstream hunks of a registered file are near each other
+registered_near() {
+  ranges_near \
+    "$(g diff -U0 "refs/tags/bb/base/$1" "$BB_MAIN_BRANCH" -- "$2" | hunk_ranges)" \
+    "$(g diff -U0 "refs/tags/$1" "refs/tags/$Y" -- "$2" | hunk_ranges)"
+}
+
+# patch_near <x> <zen patch> — a hunk upstream changed in the Zen patch is near a BB patch hunk
+patch_near() {
+  local old
+  old="$(g show "refs/tags/$1:$2" 2>/dev/null | grep '^@@ ' || true)"
+  ranges_near \
+    "$(bb_patch_hunks "$2" | hunk_ranges)" \
+    "$(g show "refs/tags/$Y:$2" 2>/dev/null | grep '^@@ ' | { grep -vxF -e "$old" || true; } | hunk_ranges)"
+}
+
 do_recon() {
-  local x f
+  local x f e near reg pat
   x="$(base_zen)"
+  reg="$(registry_pairs)"
+  pat="$(patch_pairs)"
   echo "recon: zen $x -> $Y"
   echo "recon: firefox $(tag_firefox "$x") -> $(tag_firefox "$Y")"
   echo "recon: upstream-commits $(g rev-list --count "refs/tags/$x..refs/tags/$Y")"
@@ -144,9 +192,22 @@ do_recon() {
   g diff --name-only "refs/tags/$x" "refs/tags/$Y" -- $TOOLCHAIN_FILES | while read -r f; do
     echo "recon: toolchain-changed $f"
   done
-  g diff --name-only "refs/tags/$x" "refs/tags/$Y" |
-    awk 'NR==FNR{if(!($1 in a))a[$1]=$2; next} ($1 in a){print "recon: expected-conflict", $1, a[$1]}' \
-      <(registry_pairs; patch_pairs) -
+  near=registered_near
+  if ! tag_exists "bb/base/$x"; then
+    echo "recon: no bb/base/$x, file-level"
+    near=true
+  fi
+  g diff --name-only "refs/tags/$x" "refs/tags/$Y" | while read -r f; do
+    e="$(first_epic "$f" <<<"$reg")"
+    if [ -n "$e" ]; then
+      $near "$x" "$f" || continue
+    else
+      e="$(first_epic "$f" <<<"$pat")"
+      [ -n "$e" ] || continue
+      patch_near "$x" "$f" || continue
+    fi
+    echo "recon: expected-conflict $f $e"
+  done
 }
 
 # ---- step 4 -------------------------------------------------------------------------------
