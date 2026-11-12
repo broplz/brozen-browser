@@ -6,6 +6,10 @@ scripts/agents/finish_feature.sh. Order under `## Next` is the owner's priority;
 writes task files for the first items that have none: `scripts/agents/run_queue.py --plan`.)
 
 ## Next
+- 0033 layer: `scripts/bb/rebase.sh` — en-US packs step after `import` (`python3 scripts/update_en_US_packs.py`); brand selection `surfer set brand ${BB_BRAND:-bb}` before `import` and before `package`; add `.python-version` to `TOOLCHAIN_FILES`; fixture tests — pre-rebase 1.24.1b, found by agents (0016, 0023) · S · build none
+- 0034 layer: `rebase.sh` `do_finalize` updates `brands.bb.displayVersion` in `surfer.json` to the target tag (now hardcoded `1.23.4b`), in the same finalize commit — pre-rebase 1.24.1b · S · build none · depends 0033
+- 0035 layer: move the hook `#include ../../../bb/jar.inc.mn` in `src/browser/base/content/zen-assets.jar.inc.mn` from the end of the file to its top (upstream appends at the end → a conflict on every rebase); update its entry in `src/bb/layer.yaml` `hooks`; check the other four hooks and the hook in `configs/common/mozconfig` for the same position ("end of a list upstream appends to") and move the ones at risk — pre-rebase 1.24.1b · S · build ui · needs_approval
+- 0036 agents: en-US packs step (`python3 scripts/update_en_US_packs.py`) after import in the driver's environment init (`scripts/agents/run_task.py` / night.sh) — found by agents (0016) · S · build none
 - 0001 layer: `src/bb/layer.yaml` registry (base, hooks, edits, zen_patches) + `src/bb/README.md` describing the layout — ADR-0002 §Решение 1, 2 · S · build none
 - 0002 layer: `scripts/bb/lib.sh` — `step` wrapper (header, tee into $BB_LOG_DIR, duration, exit code), log dir default `../logs/` — ADR-0002 §Решение 4 "Логирование" · S · build none
 - 0003 layer: `src/bb/` skeleton + the five hook lines (moz.build, jar.inc.mn, bb-assets.inc.xhtml, BBStartup.mjs via ZenPreloadedScripts.js, BBComponents.manifest) + `prefs/bb/bb.yaml` with `bb.layer.version` — ADR-0002 план проверки п.1 · M · build ui · DoD: about:config shows bb.* `[human]`, Browser Console shows the BBStartup line `[human]`, headless: `grep bb.layer.version engine/browser/app/profile/zen.js`
@@ -38,10 +42,7 @@ writes task files for the first items that have none: `scripts/agents/run_queue.
 - agents: `run_task`: unblock and set_blocked edit the task file on the base branch, but the driver reads the status from the task branch when it exists — unblocking a task with an open branch never reaches the driver (0025, 2026-10-31, worked around by checking the file out from feat/layer onto the task branch by hand). Fix: write the status to the task branch when it exists, or read the status from the base. Needs a check in `scripts/agents/tests/check_run_task.py` — · S · build none
 
 ## Found by agents
-(moved to ## Next: 0015)
-- 0016: add the en-US packs step (`python3 scripts/update_en_US_packs.py`) after the `import` step in `scripts/bb/rebase.sh` (ADR-0002 step 8)
-- 0016: add the en-US packs step after import in the driver's environment init (`scripts/agents/run_task.py` / night.sh)
-- 0023: `scripts/bb/rebase.sh` `package`/`import` steps should select the same brand as build.sh (`${BB_BRAND:-bb}`)
+(moved to ## Next: 0015, 0033, 0036)
 
 ## For the owner
 - commit ADR-0001 to docs/adr/0001-little-bb-floating-window.md (status Proposed → Accepted?)

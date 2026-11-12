@@ -6,7 +6,7 @@ prefix: layer
 kind: rebase
 role: rebaser
 size: L
-status: blocked
+status: done
 base: feat/layer
 branch: task/0012-bb-rebase-dry-run
 depends_on: [0006, 0011]
@@ -109,3 +109,6 @@ Next step (owner/teamlead decision, one of):
   runs inside the script, not as a Bash-tool command, so the hook shouldn't see it. Still, verify this before relying on it.
 - Also: the driver's prompt template should pass the tag (it came through empty).
 Recorded in tasks/backlog.md under "Found by agents".
+
+## Outcome
+Superseded by the real rebase to 1.24.1b (owner decision 2026-11-12). The dry-run was not run.
