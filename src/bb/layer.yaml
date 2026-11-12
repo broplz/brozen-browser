@@ -2,9 +2,9 @@
 
 # Zen base the layer sits on (read by scripts/bb/rebase.sh).
 base:
-  zen: 1.23.4b
-  firefox: 158.0.1
-  commit: 541ee55
+  zen: 1.24.1b
+  firefox: 159.0.1
+  commit: 12c01ff1e
 
 # Hook lines in Zen flat files, one entry per line.
 # Entry schema:

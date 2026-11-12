@@ -7,3 +7,4 @@ January checkpoint: if the hours and conflicts of the rebases so far are too hig
 
 | tag | date | firefox | conflicts | by epic | hours | status |
 |---|---|---|---|---|---|---|
+| 1.24.1b | 2026-11-12 | 159.0.1 | 1 | layer:1 | 8.5 | ok |
