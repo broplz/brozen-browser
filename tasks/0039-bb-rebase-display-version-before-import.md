@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0039-bb-rebase-display-version-before-import
 depends_on: []
@@ -20,10 +20,10 @@ allowed_paths:
   - scripts/bb/tests/rebase_display_version_test.sh
   - scripts/bb/tests/rebase_post_test.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
-returns: 0
+returns: 1
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 812ad0f215548ab9f3b482c976c9360e7c14c6ad
+qa_sha: 812ad0f215548ab9f3b482c976c9360e7c14c6ad
 blocked_reason:
 ---
 ## Goal
@@ -68,7 +68,47 @@ finalize still commits it in the same finalize commit (ADR-0002 Решение 4
 ## Handoff
 
 ## Result
+Round 2: Review 1 — dropped `finalize_rb`, cases a/b call `steps_rb finalize` (one helper, defined before case a).
+Review 2 — new `no_bb_brand` helper used in cases b and d. Only the test file changed; rebase_display_version_test → OK.
+Round 1: added `set_display_version` + `do_display_version` in rebase.sh; `do_finalize` calls the helper; `display_version`
+sits after `patches` in `BB_POST_STEPS` and the header. Test cases c, d, e added (own npm stub that logs the config's bb
+displayVersion on `run import`). Verified: rebase_display_version_test, rebase_post_test, rebase_test,
+rebase_continue_test, rebase_final_test, rebase_brand_test all pass. rebase_post_test unchanged. No open questions.
 
 ## Review
+APPROVE
+1. Round-1 item 1 fixed: `finalize_rb` is gone. The single `steps_rb <steps>` helper
+   (scripts/bb/tests/rebase_display_version_test.sh:69-74) is used by cases a-e.
+2. Round-1 item 2 fixed: the `no_bb_brand` helper (l.76-80) is called in cases b (l.100) and d (l.127).
+3. No other changes since the last review. rebase.sh is unchanged from round 1: `set_display_version` is the single
+   writer, the step comes after `patches`, and the header matches. layer_lint reports 0 fail / 0 warn. Scope is the
+   two allowed paths. I did not run the tests, because the hook blocks commands that name the rebase script. qa runs
+   DoD 2-3.
+
+---
+REQUEST_CHANGES
+1. scripts/bb/tests/rebase_display_version_test.sh:103-108 — `steps_rb` duplicates `finalize_rb` (l.69-74) line for line,
+   only the step list differs. Keep one helper: drop `finalize_rb` and call `steps_rb finalize` in cases a and b
+   (l.78, l.97) — or move `steps_rb` up and define `finalize_rb() { steps_rb finalize; }`. The owner's rule: no repeated blocks.
+2. scripts/bb/tests/rebase_display_version_test.sh:128 — the "no bb brand" config `printf … >"$R/$CFG"` + `rgit commit -qam
+   "no bb brand"` repeats l.94-95 verbatim. Move it into one helper (e.g. `no_bb_brand`) and call it in cases b and d.
+
+Checked and fine (no change needed):
+- Spec: DoD 1 met (header l.3 and `BB_POST_STEPS` l.39 list `display_version` after `patches`). `set_display_version`
+  is the single writer, called by `do_display_version` and `do_finalize` (teamlead note); `rewrite_display_version`,
+  `replace_with`, `finalize_subject`/`finalized` and the `g add` line are unchanged. `run_step` dispatches `do_$1`, so
+  no other registration is needed. The finalize layer.yaml failure path still reverts the config; `--continue` reruns
+  the step, so that is safe.
+- Scope: only rebase.sh and the display_version test changed; rebase_post_test.sh untouched (DoD 3 allows that).
+- Layer: no Zen/Firefox files, no prefs; layer_lint 0 fail / 0 warn.
+- Correctness: the step fails with exit 1 and a `rebase: ` line naming displayVersion (case d). The stub `npm` replaces
+  stub_env's copy only for cases c-e. Cases c/d/e match DoD 2.
+- Result: claims match the diff. I could not run the tests (the hook blocks commands that name the rebase script); qa runs them.
 
 ## QA
+PASS
+1. DoD 1: rebase.sh l.39 default and header l.3 list `display_version` after `patches`. OK.
+2. DoD 2: `rebase_display_version_test.sh` → exit 0, `rebase_display_version_test: OK`.
+3. DoD 3: rebase_test, rebase_post_test, rebase_continue_test, rebase_final_test, rebase_brand_test all pass (rebase_post_test unchanged).
+4. DoD 4: diff.sh --names lists only rebase.sh and the display_version test. layer_lint 0 fail / 0 warn.
+5. `test.sh lint`: 0 problems (log: logs/test-lint-20261113-025618.log). Build type none, skipped.
