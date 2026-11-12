@@ -45,6 +45,10 @@ One line each, in Zen's flat files (never in `.patch`):
 | `configs/common/mozconfig` | `. "$topsrcdir/../configs/bb/mozconfig"` |
 | `package.json` | `"bb:rebase"`, `"bb:patches"`, `"bb:smoke"` |
 
+Placement rule: a new hook goes where upstream does not append (top of the file after the license
+header, or after a closing tag), except when load order requires the end; the reason goes into
+`position:`/`why:` in `layer.yaml`.
+
 ## Foreign files
 
 The class of a foreign file decides the mechanism; take the cheapest one for rebases.
@@ -66,7 +70,7 @@ C++/ObjC/IDL only where nothing else works, always its own patch with a README a
 `src/bb/layer.yaml` is the registry of everything outside `src/bb/patches/`:
 
 - `base` — the Zen tag, Firefox version and Zen commit the layer sits on.
-- `hooks` — the hook lines above (`file`, `line`, `epic`, `why`).
+- `hooks` — the hook lines above (`file`, `line`, `position`, `epic`, `why`).
 - `edits` — direct edits of Zen flat files (`file`, `epic`, `why`).
 - `zen_patches` — edited Zen `.patch` files (`file`, `epic`, `why`).
 

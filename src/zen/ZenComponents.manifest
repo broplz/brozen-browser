@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# BB(layer): BB layer components
+#include ../bb/BBComponents.manifest
+
 # nsBrowserGlue.js
 
 # This component must restrict its registration for the app-startup category
@@ -18,5 +21,3 @@ category app-startup nsBrowserGlue @mozilla.org/browser/browserglue;1 applicatio
 #include live-folders/LiveFoldersComponents.manifest
 #include space-routing/SpaceRoutingComponents.manifest
 #include media/MediaComponents.manifest
-# BB(layer): BB layer components
-#include ../bb/BBComponents.manifest

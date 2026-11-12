@@ -10,33 +10,40 @@ base:
 # Entry schema:
 #   - file: <repo-relative path of the Zen flat file>
 #     line: <the exact hook line>
+#     position: <where the line sits and why it must>
 #     epic: <layer | eN-slug, e.g. e3-little-bb>
 #     why: <one-line reason>
 hooks:
   - file: src/zen/moz.build
     line: 'DIRS += ["../bb"]'
+    position: top
     epic: layer
-    why: builds src/bb/ as a Zen subdirectory
+    why: builds src/bb/ as a Zen subdirectory; before EXTRA_PP_COMPONENTS, DIRS order is free for src/bb
   - file: src/browser/base/content/zen-assets.jar.inc.mn
     line: '#include ../../../bb/jar.inc.mn'
+    position: top
     epic: layer
-    why: registers BB chrome files in the browser jar
+    why: registers BB chrome files in the browser jar; right after the license header, jar includes are order-free
   - file: src/browser/base/content/zen-assets.inc.xhtml
     line: '#include ../../../bb/bb-assets.inc.xhtml'
+    position: after-linkset
     epic: layer
-    why: includes BB assets into browser.xhtml
+    why: includes BB assets into browser.xhtml; after </linkset> so BB CSS loads after Zen's (cascade) and upstream <link> appends inside the linkset do not touch it
   - file: src/zen/common/ZenPreloadedScripts.js
     line: '"chrome://browser/content/bb/BBStartup.mjs", // BB(layer): must stay last'
+    position: last-in-scripts
     epic: layer
-    why: loads BBStartup.mjs after all Zen modules
+    why: loads BBStartup.mjs after all Zen modules; must stay last in scripts (ADR-0002), so upstream appends conflict here
   - file: src/zen/ZenComponents.manifest
     line: '#include ../bb/BBComponents.manifest'
+    position: top
     epic: layer
-    why: registers BB components
+    why: registers BB components; right after the license header, BBComponents.manifest is empty and a future BB override of a Zen contract must not rely on order
   - file: configs/common/mozconfig
     line: '. "$topsrcdir/../configs/bb/mozconfig"'
+    position: end
     epic: layer
-    why: sources BB build flags after Zen's common flags
+    why: sources BB build flags after Zen's common flags so BB overrides them; stays last, a conflict on upstream appends is expected
 
 # Direct edits (<= ~10 lines, marked BB(eN)) in Zen flat files.
 # Entry schema:

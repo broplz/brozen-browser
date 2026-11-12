@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# BB(layer): plug the BB layer into the build
+DIRS += ["../bb"]
+
 EXTRA_PP_COMPONENTS += [
     "ZenComponents.manifest",
 ]
@@ -29,5 +32,3 @@ DIRS += [
     "tabs",
     "window-drag",
 ]
-# BB(layer): plug the BB layer into the build
-DIRS += ["../bb"]

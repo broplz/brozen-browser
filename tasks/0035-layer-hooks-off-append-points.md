@@ -6,7 +6,7 @@ prefix: layer
 kind: feature
 role: developer
 size: M
-status: approved
+status: done
 base: feat/layer
 branch: task/0035-layer-hooks-off-append-points
 depends_on: []
@@ -27,7 +27,7 @@ returns: 0
 sessions: 0
 reviewed_sha: 05b41ce56d7adb712b7f05139723e3d358ebd286
 qa_sha: 05b41ce56d7adb712b7f05139723e3d358ebd286
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 ADR-0002 (hook table, l.99-108) makes each hook one line in a Zen flat file so a rebase is a plain 3-way merge.

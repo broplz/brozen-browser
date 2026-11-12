@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# BB(layer): BB layer jar manifest
+#include ../../../bb/jar.inc.mn
+
 #include ../../../zen/common/jar.inc.mn
 #include ../../../zen/compact-mode/jar.inc.mn
 #include ../../../zen/drag-and-drop/jar.inc.mn
@@ -22,5 +25,3 @@
 #include ../../../zen/library/jar.inc.mn
 #include ../../../zen/about/jar.inc.mn
 #include ../../../zen/migration/jar.inc.mn
-# BB(layer): BB layer jar manifest
-#include ../../../bb/jar.inc.mn
