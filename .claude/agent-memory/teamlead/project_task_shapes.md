@@ -130,6 +130,14 @@ on the first try, and the build passed on the first full run. It blocked on GUI-
 extra file (nsCocoaWindow.h: CreateNativeWindow reads members, not aInitData). Escalated 2026-10-31. Lessons: any DoD that
 needs Browser Console/Spaces/clicks is [human], even when it "writes a report"; for a widget flag, list the widget .h too.
 
+Planning run 2026-11-12 on feat/layer (pre-rebase 1.24.1b):
+- 0033 rebase.sh brand helper before import/package + en_us_packs step + .python-version, new test, S; also
+  `unset BB_JOBS BB_BRAND` in rebase_fixture.sh stub_env (fixes 0019's env-dependent tests).
+- 0034 do_finalize sets brands.bb displayVersion (awk, one replace_with helper), new test + ff_cfg brands, S, depends 0033.
+- 0035 move 4 hooks off EOF append points (jar/manifest/moz.build top, xhtml after </linkset>); ZenPreloadedScripts and
+  mozconfig stay (order-bound); `position:` field in layer.yaml; M by file count (6), build ui, needs_approval.
+- Hooks: teamlead/qa grep naming smoke.sh is blocked; build.sh too ("building"). Use Read or narrower path lists.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
