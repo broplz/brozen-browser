@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0041-bb-rebase-recon-line-ranges
 depends_on: []
@@ -20,10 +20,10 @@ allowed_paths:
   - scripts/bb/tests/rebase_recon_test.sh
   - scripts/bb/tests/rebase_test.sh
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
-returns: 0
+returns: 1
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 800de19642e378ccf60e5b5a1d21466acf88b2b1
+qa_sha: 800de19642e378ccf60e5b5a1d21466acf88b2b1
 blocked_reason:
 ---
 ## Goal
@@ -80,7 +80,69 @@ report.sh (l.59) needs no change.
 ## Handoff
 
 ## Result
+Round 2 (Review items 1-5)
+- 1: new `bb_patch_targets` ("<patch> <epic> <target> <zen patch>"); `patch_pairs` and `bb_patch_hunks` use it.
+- 2: `epic_of` uses `registry_pairs | first_epic`.
+- 3: `do_recon` builds `reg`/`pat` once; `first_epic` reads them.
+- 4: `2>/dev/null` on the `g show` of the Zen patch at Y.
+- 5: `local n c l` in rebase_recon_test.sh.
+- Verified: rebase_recon_test, rebase_test, rebase_post_test, rebase_continue_test, report_test pass.
+  final/brand/display_version tests not re-run (code they exercise is unchanged this round).
+
+Round 1
+- rebase.sh: recon reports `expected-conflict` only when old-side hunk ranges of the layer and of upstream lie
+  within `BB_RECON_MARGIN` (default 3, documented in the header). Helpers `hunk_ranges` (parse `@@`) and
+  `ranges_near` (nearness); `registered_near` (layer vs upstream `git diff -U0`), `patch_near` (changed Zen patch
+  hunks vs BB patch hunks via `bb_patch_hunks`). Missing `bb/base/<x>` → `recon: no bb/base/<x>, file-level`.
+  Log line format unchanged.
+- New tests/rebase_recon_test.sh (cases a–f); rebase_test.sh case a now asserts the line is absent.
+- Verified: rebase_recon_test, rebase_test, rebase_post_test, rebase_continue_test, rebase_final_test,
+  rebase_brand_test, rebase_display_version_test, report_test all pass. Did not run diff.sh/layer_lint.
+- Open: none.
 
 ## Review
+APPROVE
+Round 2: items 1-5 are fixed.
+- 1: `bb_patch_targets` (scripts/bb/rebase.sh:83-94) is now the only loop. `patch_pairs` (l.97) and `bb_patch_hunks`
+  (l.160-165) both read from it, and the `patch_pairs` output format did not change.
+- 2: `epic_of` (l.107) uses `first_epic`.
+- 3: `reg`/`pat` are built once (l.186-187), and the loop reads them through here-strings.
+- 4: both `g show` calls in `patch_near` (l.177-180) send stderr to /dev/null.
+- 5: `local n c l` (rebase_recon_test.sh:26).
+Checklist: spec matches DoD 1-5 (no change from round 1). Only allowed_paths are touched. layer_lint: 0 fail.
+The log line format did not change. Round 2 did not touch the code that the final/brand/display_version tests
+exercise; qa runs all of them.
+Nit, no action: `not_has` is now defined in both rebase_test.sh:22 and rebase_recon_test.sh:22. That matches the
+existing copy of `has`/`check`. A shared test helper would belong in a backlog item, not in this task.
+
+---
+Round 1: REQUEST_CHANGES
+1. scripts/bb/rebase.sh:157-168 `bb_patch_hunks` copies the `patch_pairs` loop (l.80-91): the same glob, `-f` guard,
+   `grep '^+++ b/' | cut -c7- | while read` and the `src/${t%/*}/${nm//./-}.patch` name mapping. This breaks the owner's
+   no-duplicates rule and the teamlead note "No copy-pasted parsing". Move it into one helper, e.g.
+   `bb_patch_targets` → "<bb patch> <epic> <target> <zen patch>". `patch_pairs` prints columns 4 and 2 of it (its
+   output format stays the same) and `bb_patch_hunks` filters on column 4 and runs the `+++`/`@@` awk on column 1.
+2. scripts/bb/rebase.sh:154 `first_epic` is the same awk as the one in `epic_of` (l.101). Make `epic_of` use
+   `registry_pairs | first_epic "$1"`.
+3. scripts/bb/rebase.sh:201,205: the loop runs `registry_pairs` and (for unregistered files) `patch_pairs` again for
+   every file upstream changed. A Zen release touches hundreds of files, and `patch_pairs` starts grep/cut for every BB
+   patch each time. The old code built the pairs once. Build them once before the loop (e.g. two locals
+   `reg="$(registry_pairs)"`, `pat="$(patch_pairs)"`) and have `first_epic` read from them.
+4. scripts/bb/rebase.sh:182 `g show "refs/tags/$Y:$2"` has no `2>/dev/null` (l.179 has one). When upstream deletes a
+   Zen patch, a `fatal: path ... does not exist` line goes into the rebase log. Treat both sides the same way.
+5. scripts/bb/tests/rebase_recon_test.sh:28 `f_txt` loops over `l` but does not declare it: add it to `local n c`.
+
+Checked, no action: DoD cases a–f map 1:1 to the scenarios (a: [1,1]/[10,10] far; b: 5/7 near at M=3, far at M=0;
+e: [20,21] vs [21,23] near, [300,302] far; the unchanged Zen hunk at -100 is dropped by `grep -vxF`). An empty `$old`
+(Zen patch new at Y) keeps every header. The file-level fallback via `near=true` prints the documented line. The log
+line format is unchanged. The header documents BB_RECON_MARGIN. Only allowed_paths are touched. layer_lint: 0 fail.
+I did not run the tests myself (the hook blocks rebase commands for the reviewer); qa runs them.
 
 ## QA
+PASS
+1. rebase_recon_test.sh → exit 0, `rebase_recon_test: OK`.
+2. rebase_test.sh → PASS.
+3. rebase_post, rebase_continue, rebase_final, rebase_brand, rebase_display_version, report tests → all pass.
+4. rebase.sh header l.11-12 lists BB_RECON_MARGIN (default 3).
+5. diff.sh --names lists only rebase.sh, rebase_recon_test.sh, rebase_test.sh. (`git diff feat/layer --name-only` also shows two `.claude/agent-memory/reviewer/` files from the reviewer session; not developer output, not counted by diff.sh.)
+6. Build none (skipped). `test.sh lint` OK (0 problems), layer_lint 0 fail.
