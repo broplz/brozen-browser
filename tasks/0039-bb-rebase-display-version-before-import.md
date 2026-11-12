@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: approved
+status: done
 base: feat/layer
 branch: task/0039-bb-rebase-display-version-before-import
 depends_on: []
@@ -24,7 +24,7 @@ returns: 1
 sessions: 0
 reviewed_sha: 812ad0f215548ab9f3b482c976c9360e7c14c6ad
 qa_sha: 812ad0f215548ab9f3b482c976c9360e7c14c6ad
-blocked_reason:
+blocked_reason: 
 ---
 ## Goal
 0034 made `do_finalize` (scripts/bb/rebase.sh:308) set `brands.bb` `displayVersion` to the target tag `$Y`. finalize

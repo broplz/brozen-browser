@@ -14,4 +14,5 @@
 - [Actor event order](feedback_actor_event_order.md) — actor DOMContentLoaded needs capture:true to beat page init
 - [Switch polarity](feedback_switch_polarity.md) — strip switches are "Remove X" (on = stripped); ADR "on" wording inverts
 - [DoD mechanism swap](feedback_dod_deviation.md) — openly declared cheaper mechanism + ADR intent kept → APPROVE, flag for owner
+- [Test helper dupes](feedback_test_helper_dupes.md) — new test cases copy runner helpers/fixture literals; flag per owner rule
 - [patches.sh exec bit](project_patches_sh_exec_bit.md) — no exec bit; READMEs calling it directly fail

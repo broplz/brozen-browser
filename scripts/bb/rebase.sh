@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # BB rebase runbook (ADR-0002 Решение 4): steps 1-4 preflight, fetch, recon, rebase/<tag>;
-# steps 5-11 deps, engine, patches, import, en_us_packs, build, lint, smoke, package, install, finalize, publish
+# steps 5-11 deps, engine, patches, display_version, import, en_us_packs, build, lint, smoke, package, install, finalize, publish
 # (post_rebase).
 #   rebase.sh <zen-tag>              run steps 1-11
 #   rebase.sh --continue <zen-tag>   resume after the conflicts of step 4 were resolved
@@ -36,7 +36,7 @@ BB_REPORT="${BB_REPORT:-$BB_ROOT/scripts/bb/report.sh}"
 BB_DIST_DIR="${BB_DIST_DIR:-$BB_REPO_DIR/dist}"
 BB_APPS_DIR="${BB_APPS_DIR:-/Applications}"
 BB_PUSH_REMOTE="${BB_PUSH_REMOTE:-origin}"
-BB_POST_STEPS="${BB_POST_STEPS:-deps engine patches import en_us_packs build lint smoke package install finalize publish}"
+BB_POST_STEPS="${BB_POST_STEPS:-deps engine patches display_version import en_us_packs build lint smoke package install finalize publish}"
 BB_REBASE_DOCS="$BB_REPO_DIR/docs/rebase"
 export BB_ENGINE_DIR
 TOOLCHAIN_FILES=".nvmrc rust-toolchain.toml package-lock.json requirements.txt .python-version"
@@ -298,6 +298,15 @@ replace_with() {
   return "$rc"
 }
 
+# set_display_version — brands.bb displayVersion = $Y in the working tree (idempotent)
+set_display_version() {
+  replace_with "$BB_REPO_DIR/$BUILD_CONFIG" rewrite_display_version "$Y" ||
+    { say_fail "no brands.bb displayVersion in $BUILD_CONFIG"; return 1; }
+}
+
+# step 7b: before import, so build, package and About carry the target tag; finalize commits it
+do_display_version() { set_display_version; }
+
 # finalize_subject <firefox> — subject of the finalize commit (written by do_finalize, found by --continue)
 finalize_subject() { echo "rebase: Zen $Y (Firefox $1)"; }
 
@@ -308,8 +317,7 @@ finalized() { [ "$(g log -1 --format=%s HEAD)" = "$(finalize_subject "$(tag_fire
 do_finalize() {
   local fy
   fy="$(tag_firefox "$Y")"
-  replace_with "$BB_REPO_DIR/$BUILD_CONFIG" rewrite_display_version "$Y" ||
-    { say_fail "no brands.bb displayVersion in $BUILD_CONFIG"; return 1; }
+  set_display_version || return 1
   replace_with "$LAYER_YAML" rewrite_base "$Y" "$fy" "$(g rev-parse --short "refs/tags/$Y^{commit}")" ||
     { g checkout -q -- "$BUILD_CONFIG"; say_fail "cannot rewrite layer.yaml"; return 1; }
   BB_REBASE_DOCS="$BB_REBASE_DOCS" bash "$BB_REPORT" "$Y" "$BB_LOG" ok || { say_fail "report failed"; return 1; }

@@ -66,16 +66,22 @@ fixture() {
   BB_POST_STEPS=lint /bin/bash "$rebase" 1.0.1b >"$T/out" 2>"$T/err" || echo "FAIL: $1: setup rebase: $(cat "$T/err")"
 }
 
-# finalize_rb — --continue with the finalize step only; sets RC ERR
-finalize_rb() {
+# steps_rb <steps> — --continue with the given post steps; sets RC ERR
+steps_rb() {
   RC=0
-  BB_POST_STEPS=finalize /bin/bash "$rebase" --continue 1.0.1b >"$T/out" 2>"$T/err" || RC=$?
+  BB_POST_STEPS="$1" /bin/bash "$rebase" --continue 1.0.1b >"$T/out" 2>"$T/err" || RC=$?
   ERR="$(cat "$T/err")"
+}
+
+# no_bb_brand — commit a config without the bb brand
+no_bb_brand() {
+  printf '{\n  "brands": {\n    "release": {\n      "release": {\n        "displayVersion": "9.9.9"\n      }\n    }\n  },\n  "version": {\n    "version": "151.0"\n  }\n}\n' >"$R/$CFG"
+  rgit commit -qam "no bb brand"
 }
 
 # (a) finalize ok
 fixture a
-finalize_rb
+steps_rb finalize
 check "a: exit 0 (stderr: $ERR)" eq "$RC" 0
 files="$(rgit show --name-only --format= HEAD)"
 check "a: config in the commit" has "$CFG" "$files"
@@ -91,13 +97,44 @@ check "a: the + line is the tag" has '+        "displayVersion": "1.0.1b"' "$dif
 
 # (b) no bb brand: nothing is touched
 fixture b
-printf '{\n  "brands": {\n    "release": {\n      "release": {\n        "displayVersion": "9.9.9"\n      }\n    }\n  },\n  "version": {\n    "version": "151.0"\n  }\n}\n' >"$R/$CFG"
-rgit commit -qam "no bb brand"
+no_bb_brand
 head_before="$(rgit rev-parse HEAD)"
-finalize_rb
+steps_rb finalize
 check "b: exit 1" eq "$RC" 1
 check "b: stderr names displayVersion" has displayVersion "$ERR"
 check "b: HEAD unchanged" eq "$(rgit rev-parse HEAD)" "$head_before"
 check "b: config and layer.yaml untouched" eq "$(rgit status --porcelain -- "$CFG" src/bb/layer.yaml)" ""
+
+# npm stub that copies the config's bb displayVersion line into the call log on `run import`
+cat >"$T/stubs/bin/npm" <<'EOF'
+#!/bin/sh
+echo "npm $*" >>"$CALLS"
+[ "$*" = "run import" ] && echo "IMPORT-SAW $(grep -A3 '"bb"' "$BB_REPO_DIR/$CFG" | grep displayVersion)" >>"$CALLS"
+exit 0
+EOF
+export CFG
+
+# (c) display_version writes the tree before import, uncommitted
+fixture c
+steps_rb "display_version import"
+check "c: exit 0 (stderr: $ERR)" eq "$RC" 0
+check "c: import saw the tag" has 'IMPORT-SAW         "displayVersion": "1.0.1b"' "$(cat "$CALLS")"
+check "c: config modified, not committed" eq "$(rgit status --porcelain -- "$CFG")" " M $CFG"
+
+# (d) no bb brand
+fixture d
+no_bb_brand
+steps_rb display_version
+check "d: exit 1" eq "$RC" 1
+check "d: stderr names displayVersion" has displayVersion "$ERR"
+
+# (e) display_version then finalize: the second write is a no-op
+fixture e
+steps_rb "display_version finalize"
+check "e: exit 0 (stderr: $ERR)" eq "$RC" 0
+check "e: config in the finalize commit" has "$CFG" "$(rgit show --name-only --format= HEAD)"
+check "e: config has the tag" has '"displayVersion": "1.0.1b"' "$(grep -A3 '"bb"' "$R/$CFG")"
+diffl="$(rgit diff HEAD~1 HEAD -- "$CFG" | grep -E '^[-+][^-+]')"
+check "e: one - and one + line" eq "$(wc -l <<<"$diffl" | tr -d ' ')" 2
 
 if [ "$failed" = 0 ]; then echo "rebase_display_version_test: OK"; else echo "rebase_display_version_test: FAIL"; exit 1; fi
