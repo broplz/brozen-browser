@@ -6,7 +6,7 @@ prefix: layer
 kind: script
 role: developer
 size: S
-status: ready
+status: approved
 base: feat/layer
 branch: task/0033-bb-rebase-brand-en-us-packs
 depends_on: []
@@ -22,8 +22,8 @@ allowed_paths:
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md#решение-4
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: c57f7887ee07521b1c2ac00fc60f0bec2a602dc6
+qa_sha: c57f7887ee07521b1c2ac00fc60f0bec2a602dc6
 blocked_reason:
 ---
 ## Goal
@@ -72,7 +72,35 @@ inheriting `BB_JOBS`/`BB_BRAND` from the agent environment, so the existing reba
 ## Handoff
 
 ## Result
+Round 1:
+- rebase.sh: `BB_BRAND` (default bb) + `set_brand` called first in `do_import` and `do_package`; new step
+  `do_en_us_packs` after `import` in the default `BB_POST_STEPS`; `.python-version` in `TOOLCHAIN_FILES`; header updated.
+- rebase_fixture.sh: `stub_env` unsets `BB_JOBS BB_BRAND`. Also added a logging `python3` stub in `stub_env`
+  (beyond the one-line brief): without it rebase_final_test and rebase_continue_test run the new default
+  `en_us_packs` step with the real python3 and fail (no script in the fixture repo).
+- New rebase_brand_test.sh (cases a-d).
+- Verified: rebase_brand_test, rebase_test, rebase_post_test, rebase_final_test, rebase_continue_test all pass.
 
 ## Review
+APPROVE
+Checklist: (1) spec — set_brand before import/package with `${BB_BRAND:-bb}`, `en_us_packs` step after import
+in the default BB_POST_STEPS, `.python-version` in TOOLCHAIN_FILES, header names `en_us_packs` and `BB_BRAND (default bb)`;
+DoD 1a-d are covered by rebase_brand_test.sh. (2) scope — only allowed_paths; the existing test files are untouched.
+(3) layer — no Zen/Firefox files touched; layer_lint shows 0 fail, 0 warn. (4) correctness — no other python3 use in rebase.sh,
+so the fixture stub doesn't hide anything; npm_or_fail reports failures, `|| return 1` stops before import/package;
+the step runs from the repo cwd. bash 3.2: no arrays (process substitution is fine). (5) I could not run the tests:
+the reviewer sandbox blocks commands that name rebase.sh, so QA must confirm DoD 1-2.
+(6) hygiene is OK.
+Notes (non-blocking):
+1. scripts/bb/tests/rebase_fixture.sh:37 — this goes beyond the one-line brief. The change was declared openly and
+   is justified: without it, the new default step runs the real python3 in the final/continue tests.
+2. scripts/bb/tests/rebase_brand_test.sh:16-21 overwrites the fixture's python3 stub with a near-copy, as DoD 1 asks.
+   If the fixture stub honoured `STUB_FAIL_PY` (like `STUB_FAIL_NVM`), the copy could go. Leave this for a future cleanup.
 
 ## QA
+PASS
+1. build none; `test.sh lint` OK (0 problems), layer_lint 0 fail / 0 warn.
+2. DoD 1: rebase_brand_test.sh → `rebase_brand_test: OK` (cases a-d; 1d TOOLCHAIN_FILES line 42 has .python-version).
+3. DoD 2: rebase_test, rebase_post_test, rebase_final_test, rebase_continue_test all pass in the agent session.
+4. DoD 3: header line 3 names `en_us_packs`; line 11 `BB_BRAND (default bb)`.
+5. DoD 4: diff.sh --names lists only rebase.sh, rebase_brand_test.sh, rebase_fixture.sh (task file is the branch's own).
