@@ -6,7 +6,7 @@ prefix: layer
 kind: feature
 role: developer
 size: M
-status: ready
+status: approved
 base: feat/layer
 branch: task/0035-layer-hooks-off-append-points
 depends_on: []
@@ -25,8 +25,8 @@ allowed_paths:
 spec: docs/adr/0002-bb-layer-and-rebase-runbook.md
 returns: 0
 sessions: 0
-reviewed_sha:
-qa_sha:
+reviewed_sha: 05b41ce56d7adb712b7f05139723e3d358ebd286
+qa_sha: 05b41ce56d7adb712b7f05139723e3d358ebd286
 blocked_reason:
 ---
 ## Goal
@@ -81,7 +81,24 @@ order-bound hooks stay, and src/bb/layer.yaml records every hook's position and 
 ## Handoff
 
 ## Result
+Round 1: moved the four hooks (jar.inc.mn, ZenComponents.manifest, moz.build to the top; bb-assets after `</linkset>`), text unchanged. layer.yaml: `position:` on all six hooks, schema comment, extended `why:`. README: placement rule next to the hook table.
+Verified: layer_lint → 0 fail; `scripts/agents/build.sh ui` → BUILD RESULT: OK. Line positions follow the edits as specified (not re-grepped one by one). No open questions.
 
 ## Review
+APPROVE
+1. Spec: I re-ran DoD 1-5, 7 and 9 and all of them pass: hooks at lines 5-6 of jar.inc.mn, ZenComponents.manifest and moz.build with a blank line 7. In zen-assets.inc.xhtml the hook is at lines 32-33 right after `</linkset>` (l.31). Every `tail -n 1` matches the DoD, layer.yaml has 6 `position:` lines, its diff has no `line:` changes, layer_lint reports 0 fail, and `--names` lists only allowed_paths. ZenPreloadedScripts.js and configs/common/mozconfig are untouched, as ADR-0002 l.106 requires. The diff adds nothing beyond the task.
+2. Scope: only allowed_paths are touched. There are no tests and no Zen `.patch` changes.
+3. Layer rules: these are class-2 plain edits. The text of each marker and hook line is unchanged, and markers use the `#` preprocessor comment syntax. layer.yaml has the `position:` schema comment, and README.md has the placement rule next to the hook table (DoD 6). The hooks only move, so with the BB prefs off behaviour is still stock Zen.
+4. Correctness: putting `DIRS += ["../bb"]` before the other `DIRS +=` in moz.build is fine, because DIRS is a predefined list and the order does not matter for src/bb. The jar includes do not depend on order. BB CSS still loads after Zen's linkset. The bb-assets include now comes before the ZenPreloadedScripts `<script>` line, but it only adds assets, and BBStartup still loads last through ZenPreloadedScripts.js.
+5. Verification: the Result honestly says the line positions were not re-grepped one by one. I re-grepped them and they match. I did not rebuild (DoD 8); qa does that.
+6. Hygiene: English throughout, no TODOs, no dead code.
 
 ## QA
+PASS
+1. DoD 1-4: re-grepped; marker/hook lines at 5-6 (jar, manifest, moz.build), line 7 empty, tail -n 1 as specified; xhtml 8/31/32/33 and tail is the ZenPreloadedScripts.js script line.
+2. DoD 5: 6 `position:` lines; schema comment documents it; layer.yaml diff has no `line:` changes.
+3. DoD 6: README placement rule next to the hook table.
+4. DoD 7: layer_lint 0 fail. DoD 8: BUILD RESULT: OK (log logs/build-ui-20261112-160326.log). Lint OK (logs/test-lint-20261112-160358.log).
+5. DoD 9: diff --names lists only allowed_paths (task file is committed separately).
+
+For the human: needs_approval — hook moves in Zen files.
