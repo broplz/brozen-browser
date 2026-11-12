@@ -159,6 +159,16 @@ Planning run 2026-11-13 on feat/layer (post-rebase 1.24.1b):
 - 0040 docs-only report (squash/merge/rerere options vs ADR-0002 lines), S, needs_approval for the owner's pick.
 - Read tool works on node_modules surfer files with offset/limit ≤400 (Bash naming it is blocked; no Grep tool here).
 
+Planning run 2026-11-13 (2nd): 0042 (rebase to 1.24.2b, "owner runs it" + role rebaser) escalated: deliverable unclear,
+hooks block `git rebase --continue`. Planned the next three:
+- 0041 recon line-range nearness (git diff -U0 old-side ranges, BB_RECON_MARGIN=3; Zen-patch hunks new at Y vs BB patch
+  hunks), new recon test + one assertion flip in rebase_test case a (it was a "far" case), S.
+- 0043 floating-window re-author on FF159 from 0031's commits (git show 20a4d5bec/47077e5e5 → Write), M, developer-hard,
+  full; GUI measurements/F-checks are [human] → agent goes to review, not blocked. Watch: does it reach review first try?
+- 0044 adopt owner unblock only if base copy's last commit time > branch copy's; copy only status+blocked_reason via
+  TaskFile.set; loop-level tests via run_task.run_task(once=True). S, needs_approval.
+- zsh: quote globs in git args (`"*0031*"`), unquoted no-match aborts. `git ls-tree` is denied; `git log --stat` works.
+
 **Why:** calibrate S/M/L estimates and DoD style against real returns.
 **How to apply:** after each run, record per id: done first try / returned (why) / split.
 Watch 0013: `build.sh ui` may not regenerate the backend for new DIRS/jar.mn, so it may need a re-spec to full.
